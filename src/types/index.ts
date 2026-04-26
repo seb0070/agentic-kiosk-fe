@@ -2,10 +2,12 @@ export interface MenuItem {
   id: number;
   name: string;
   category: string;
-  price: number;
+  price: string;        // number → string으로 변경
   spicy_level: number;
-  kcal: number;
+  kcal?: number;
   description?: string;
+  img_url?: string;     // 추가
+  badge?: string;       // 추가
 }
 
 export interface CartItem {
