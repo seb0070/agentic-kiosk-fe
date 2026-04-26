@@ -24,7 +24,8 @@ export interface CartResponse {
 export interface WsMessage {
   stt_text: string;
   refined_text: string;
-  response: string;
+  voice: string;
+  screen: string;
 }
 
 export interface OrderResponse {
