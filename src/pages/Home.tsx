@@ -80,44 +80,51 @@ function Home() {
 
         {/* 메뉴 카드 3개 */}
         <div style={{ display: 'flex', gap: '10px' }}>
-          {menus?.slice(0, 3).map((menu) => (
-            <div
-              key={menu.id}
-              style={{
-                background: 'rgba(255,255,255,0.95)',
-                borderRadius: '16px',
-                padding: '10px 8px',
-                flex: 1,
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-              }}
-            >
-              <img
-                src={menu.img_url}
-                alt={menu.name}
-                style={{
-                  width: '60px',
-                  height: '50px',
-                  objectFit: 'cover',
-                  borderRadius: '8px',
-                }}
-              />
+          {menus
+            ?.filter((menu) => menu.badge === 'BEST')
+            .slice(0, 3)
+            .map((menu) => (
               <div
+                key={menu.id}
                 style={{
-                  fontWeight: 'bold',
-                  fontSize: '11px',
-                  marginTop: '6px',
+                  background: 'rgba(255,255,255,0.95)',
+                  borderRadius: '16px',
+                  padding: '10px 8px',
+                  flex: 1,
+                  textAlign: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                 }}
               >
-                {menu.name}
+                <img
+                  src={menu.img_url}
+                  alt={menu.name}
+                  style={{
+                    width: '60px',
+                    height: '50px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                  }}
+                />
+                <div
+                  style={{
+                    fontWeight: 'bold',
+                    fontSize: '11px',
+                    marginTop: '6px',
+                  }}
+                >
+                  {menu.name}
+                </div>
+                <div
+                  style={{
+                    color: '#e63312',
+                    fontSize: '11px',
+                    marginTop: '2px',
+                  }}
+                >
+                  {parseInt(menu.price.replace(',', '')).toLocaleString()}원
+                </div>
               </div>
-              <div
-                style={{ color: '#e63312', fontSize: '11px', marginTop: '2px' }}
-              >
-                {parseInt(menu.price.replace(',', '')).toLocaleString()}원
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>
