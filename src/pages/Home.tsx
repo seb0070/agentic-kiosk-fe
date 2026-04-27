@@ -1,9 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMenus } from '../api/menu';
 import { useState } from 'react';
+import { getMenus } from '../api/menu';
+import ChatBubble from '../components/ChatBubble';
 import MenuModal from '../components/MenuModal';
+import VoiceButton from '../components/VoiceButton';
+import { useVoice } from '../hooks/useVoice';
 
 function Home() {
+  const { isConnected, isListening, message, toggleListening } = useVoice();
+
   const { data: menus, isLoading } = useQuery({
     queryKey: ['menus'],
     queryFn: () => getMenus(),
@@ -38,6 +43,9 @@ function Home() {
         }}
       />
 
+      {/* 말풍선 */}
+      <ChatBubble message={message} />
+
       {/* 추천 메뉴 + 전체 메뉴 보기 */}
       <div
         style={{
@@ -48,7 +56,6 @@ function Home() {
           width: '90%',
         }}
       >
-        {/* 상단 라벨 */}
         <div
           style={{
             display: 'flex',
@@ -83,7 +90,6 @@ function Home() {
           </button>
         </div>
 
-        {/* 메뉴 카드 3개 */}
         <div style={{ display: 'flex', gap: '10px' }}>
           {menus
             ?.filter((menu) => menu.badge === 'BEST')
@@ -132,6 +138,14 @@ function Home() {
             ))}
         </div>
       </div>
+
+      {/* 음성 버튼 */}
+      <VoiceButton
+        isConnected={isConnected}
+        isListening={isListening}
+        onToggle={toggleListening}
+      />
+
       {showModal && <MenuModal onClose={() => setShowModal(false)} />}
     </div>
   );
