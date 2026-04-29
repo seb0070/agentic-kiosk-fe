@@ -8,6 +8,7 @@ interface Option {
   menu_id: number;
   name: string;
   extra_price: number;
+  img_url?: string;
 }
 
 interface SetMenu {
@@ -19,6 +20,7 @@ interface SetMenu {
 
 interface Props {
   menu: MenuItem;
+  voiceMessage?: string;
   onClose: () => void;
   onConfirm: (params: {
     menu_id: number;
@@ -31,8 +33,9 @@ interface Props {
 }
 
 type Step = 'type' | 'drink' | 'side' | 'confirm';
+const OPTIONS_PER_PAGE = 6;
 
-function OptionModal({ menu, onClose, onConfirm }: Props) {
+function OptionModal({ menu, voiceMessage, onClose, onConfirm }: Props) {
   const [step, setStep] = useState<Step>('type');
   const [isSet, setIsSet] = useState(false);
   const [setInfo, setSetInfo] = useState<SetMenu | null>(null);
@@ -41,15 +44,15 @@ function OptionModal({ menu, onClose, onConfirm }: Props) {
   const [selectedDrink, setSelectedDrink] = useState<Option | null>(null);
   const [selectedSide, setSelectedSide] = useState<Option | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [drinkPage, setDrinkPage] = useState(0);
+  const [sidePage, setSidePage] = useState(0);
 
   useEffect(() => {
-    // 옵션 목록 로드
     client.get('/options').then((res) => {
       const all: Option[] = res.data.items;
       setDrinks(all.filter((o) => o.option_type === '드링크'));
       setSides(all.filter((o) => o.option_type === '사이드'));
     });
-    // 세트 정보 로드
     client
       .get(`/menu/${menu.id}/set`)
       .then((res) => {
@@ -66,11 +69,7 @@ function OptionModal({ menu, onClose, onConfirm }: Props) {
 
   const handleTypeSelect = (set: boolean) => {
     setIsSet(set);
-    if (set) {
-      setStep('drink');
-    } else {
-      setStep('confirm');
-    }
+    setStep(set ? 'drink' : 'confirm');
   };
 
   const handleDrinkSelect = (drink: Option) => {
@@ -95,432 +94,731 @@ function OptionModal({ menu, onClose, onConfirm }: Props) {
     onClose();
   };
 
-  const overlay: React.CSSProperties = {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.5)',
-    zIndex: 100,
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+  const handlePrev = () => {
+    if (step === 'drink') setStep('type');
+    else if (step === 'side') setStep('drink');
+    else if (step === 'confirm') setStep(isSet ? 'side' : 'type');
   };
 
-  const sheet: React.CSSProperties = {
-    background: 'white',
-    borderRadius: '20px 20px 0 0',
-    width: '100%',
-    maxWidth: 'calc(100vh * 0.5625)',
-    maxHeight: '80vh',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  };
+  // 옵션 카드 렌더러
+  const renderOptionCard = (
+    item: Option,
+    selected: boolean,
+    onClick: () => void,
+    fallbackEmoji: string
+  ) => (
+    <button
+      key={item.option_id}
+      onClick={onClick}
+      style={{
+        border: selected ? '2px solid #e63312' : '1.5px solid #e0e0e0',
+        borderRadius: '10px',
+        background: selected ? '#fff5f3' : 'white',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '4px',
+        padding: '6px 4px',
+      }}
+    >
+      {item.img_url ? (
+        <img
+          src={item.img_url}
+          alt={item.name}
+          style={{
+            width: '40px',
+            height: '40px',
+            objectFit: 'contain',
+            borderRadius: '6px',
+            background: '#f5f5f5',
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '6px',
+            background: '#f0f0f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+          }}
+        >
+          {fallbackEmoji}
+        </div>
+      )}
+      <div
+        style={{
+          fontSize: '10px',
+          fontWeight: '600',
+          color: selected ? '#e63312' : '#222',
+          textAlign: 'center',
+          lineHeight: '1.3',
+        }}
+      >
+        {item.name}
+      </div>
+      <div
+        style={{
+          fontSize: '10px',
+          color: selected ? '#e63312' : '#888',
+          fontWeight: '600',
+        }}
+      >
+        {item.extra_price > 0
+          ? `+${item.extra_price.toLocaleString()}원`
+          : '기본'}
+      </div>
+    </button>
+  );
 
-  const header: React.CSSProperties = {
-    padding: '16px',
-    borderBottom: '1px solid #f0f0f0',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    flexShrink: 0,
-  };
-
-  const body: React.CSSProperties = {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '16px',
-  };
-
-  const footer: React.CSSProperties = {
-    padding: '12px 16px 20px',
-    borderTop: '1px solid #f0f0f0',
-    flexShrink: 0,
-  };
-
-  const optionBtn = (selected: boolean): React.CSSProperties => ({
-    width: '100%',
-    padding: '14px',
-    borderRadius: '12px',
-    border: selected ? '2px solid #e63312' : '1.5px solid #e0e0e0',
-    background: selected ? '#fff5f3' : 'white',
-    color: selected ? '#e63312' : '#333',
-    fontWeight: selected ? '700' : '500',
-    fontSize: '14px',
-    cursor: 'pointer',
-    marginBottom: '8px',
-    textAlign: 'left',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  });
+  // 페이지네이션 렌더러
+  const renderPagination = (
+    page: number,
+    total: number,
+    setPage: React.Dispatch<React.SetStateAction<number>>
+  ) =>
+    total > OPTIONS_PER_PAGE ? (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '16px',
+          padding: '10px 0 0',
+        }}
+      >
+        <button
+          onClick={() => setPage((p) => p - 1)}
+          disabled={page === 0}
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            border: 'none',
+            background: page === 0 ? '#eee' : '#e63312',
+            color: page === 0 ? '#bbb' : 'white',
+            fontSize: '14px',
+            cursor: page === 0 ? 'default' : 'pointer',
+          }}
+        >
+          ◀
+        </button>
+        <span style={{ fontSize: '12px', color: '#999' }}>
+          {page + 1} / {Math.ceil(total / OPTIONS_PER_PAGE)}
+        </span>
+        <button
+          onClick={() => setPage((p) => p + 1)}
+          disabled={(page + 1) * OPTIONS_PER_PAGE >= total}
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            border: 'none',
+            background:
+              (page + 1) * OPTIONS_PER_PAGE >= total ? '#eee' : '#e63312',
+            color: (page + 1) * OPTIONS_PER_PAGE >= total ? '#bbb' : 'white',
+            fontSize: '14px',
+            cursor:
+              (page + 1) * OPTIONS_PER_PAGE >= total ? 'default' : 'pointer',
+          }}
+        >
+          ▶
+        </button>
+      </div>
+    ) : null;
 
   return (
-    <div style={overlay} onClick={onClose}>
-      <div style={sheet} onClick={(e) => e.stopPropagation()}>
-        {/* 헤더 */}
-        <div style={header}>
-          {step !== 'type' && (
-            <button
-              onClick={() => {
-                if (step === 'drink') setStep('type');
-                if (step === 'side') setStep('drink');
-                if (step === 'confirm') setStep(isSet ? 'side' : 'type');
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '18px',
-                cursor: 'pointer',
-                color: '#555',
-                padding: 0,
-              }}
-            >
-              ←
-            </button>
-          )}
-          <img
-            src={menu.img_url || undefined}
-            alt={menu.name}
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: '88%',
+          maxWidth: '360px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* AI 말풍선 */}
+        {voiceMessage && (
+          <div
             style={{
-              width: '48px',
-              height: '48px',
-              objectFit: 'contain',
-              borderRadius: '8px',
-              background: '#f5f5f5',
-            }}
-          />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: '700', fontSize: '15px', color: '#222' }}>
-              {menu.name}
-            </div>
-            <div
-              style={{
-                fontSize: '13px',
-                color: '#e63312',
-                fontWeight: '600',
-                marginTop: '2px',
-              }}
-            >
-              {menu.price.toLocaleString()}원
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: '#bbb',
-              padding: 0,
+              background: 'white',
+              borderRadius: '14px',
+              padding: '10px 14px',
+              fontSize: '13px',
+              fontWeight: '500',
+              color: '#333',
+              lineHeight: '1.5',
+              textAlign: 'center',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+              border: '1.5px solid #e63312',
             }}
           >
-            ✕
-          </button>
-        </div>
-
-        {/* Step 1: 단품 / 세트 */}
-        {step === 'type' && (
-          <>
-            <div style={body}>
-              <div
-                style={{
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  color: '#222',
-                  marginBottom: '16px',
-                }}
-              >
-                어떻게 주문하시겠어요?
-              </div>
-              <button
-                style={optionBtn(!isSet)}
-                onClick={() => handleTypeSelect(false)}
-              >
-                <span>단품</span>
-                <span style={{ fontSize: '13px', color: '#888' }}>
-                  {menu.price.toLocaleString()}원
-                </span>
-              </button>
-              {setInfo && (
-                <button
-                  style={optionBtn(isSet)}
-                  onClick={() => handleTypeSelect(true)}
-                >
-                  <span>
-                    세트{' '}
-                    <span style={{ fontSize: '12px', color: '#888' }}>
-                      (음료+사이드 포함)
-                    </span>
-                  </span>
-                  <span style={{ fontSize: '13px', color: '#888' }}>
-                    {setInfo.set_price.toLocaleString()}원
-                  </span>
-                </button>
-              )}
-            </div>
-          </>
+            💬 {voiceMessage}
+          </div>
         )}
 
-        {/* Step 2: 음료 선택 */}
-        {step === 'drink' && (
-          <>
-            <div style={body}>
-              <div
-                style={{
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  color: '#222',
-                  marginBottom: '16px',
-                }}
-              >
-                음료를 선택해주세요
-              </div>
-              {drinks.map((d) => (
-                <button
-                  key={d.option_id}
-                  style={optionBtn(selectedDrink?.option_id === d.option_id)}
-                  onClick={() => handleDrinkSelect(d)}
-                >
-                  <span>{d.name}</span>
-                  <span style={{ fontSize: '13px', color: '#888' }}>
-                    {d.extra_price > 0
-                      ? `+${d.extra_price.toLocaleString()}원`
-                      : '기본'}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Step 3: 사이드 선택 */}
-        {step === 'side' && (
-          <>
-            <div style={body}>
-              <div
-                style={{
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  color: '#222',
-                  marginBottom: '16px',
-                }}
-              >
-                사이드를 선택해주세요
-              </div>
-              {sides.map((s) => (
-                <button
-                  key={s.option_id}
-                  style={optionBtn(selectedSide?.option_id === s.option_id)}
-                  onClick={() => handleSideSelect(s)}
-                >
-                  <span>{s.name}</span>
-                  <span style={{ fontSize: '13px', color: '#888' }}>
-                    {s.extra_price > 0
-                      ? `+${s.extra_price.toLocaleString()}원`
-                      : '기본'}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Step 4: 최종 확인 */}
-        {step === 'confirm' && (
-          <>
-            <div style={body}>
-              <div
-                style={{
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  color: '#222',
-                  marginBottom: '16px',
-                }}
-              >
-                주문 내역을 확인해주세요
-              </div>
-              <div
-                style={{
-                  background: '#f9f9f9',
-                  borderRadius: '12px',
-                  padding: '14px',
-                  marginBottom: '16px',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <span style={{ fontSize: '14px', color: '#555' }}>메뉴</span>
-                  <span style={{ fontSize: '14px', fontWeight: '600' }}>
-                    {menu.name}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <span style={{ fontSize: '14px', color: '#555' }}>종류</span>
-                  <span style={{ fontSize: '14px', fontWeight: '600' }}>
-                    {isSet ? '세트' : '단품'}
-                  </span>
-                </div>
-                {isSet && selectedDrink && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    <span style={{ fontSize: '14px', color: '#555' }}>
-                      음료
-                    </span>
-                    <span style={{ fontSize: '14px', fontWeight: '600' }}>
-                      {selectedDrink.name}
-                    </span>
-                  </div>
-                )}
-                {isSet && selectedSide && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    <span style={{ fontSize: '14px', color: '#555' }}>
-                      사이드
-                    </span>
-                    <span style={{ fontSize: '14px', fontWeight: '600' }}>
-                      {selectedSide.name}
-                    </span>
-                  </div>
-                )}
-                <div
-                  style={{
-                    borderTop: '1px solid #e0e0e0',
-                    marginTop: '8px',
-                    paddingTop: '8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <span style={{ fontSize: '14px', color: '#555' }}>금액</span>
-                  <span
-                    style={{
-                      fontSize: '15px',
-                      fontWeight: '700',
-                      color: '#e63312',
-                    }}
-                  >
-                    {unitPrice.toLocaleString()}원
-                  </span>
-                </div>
-              </div>
-
-              {/* 수량 선택 */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '20px',
-                }}
-              >
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    border: '1.5px solid #ddd',
-                    background: 'white',
-                    fontSize: '18px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  −
-                </button>
-                <span
-                  style={{
-                    fontSize: '18px',
-                    fontWeight: '700',
-                    minWidth: '24px',
-                    textAlign: 'center',
-                  }}
-                >
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity((q) => q + 1)}
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    border: '1.5px solid #ddd',
-                    background: 'white',
-                    fontSize: '18px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* 하단 버튼 */}
-        <div style={footer}>
-          {step === 'confirm' ? (
-            <button
-              onClick={handleConfirm}
+        {/* 모달 본체 */}
+        <div
+          style={{
+            background: 'white',
+            borderRadius: '20px',
+            height: '62vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          }}
+        >
+          {/* 헤더 */}
+          <div
+            style={{
+              padding: '12px 14px',
+              borderBottom: '1px solid #f0f0f0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              flexShrink: 0,
+            }}
+          >
+            <img
+              src={menu.img_url || undefined}
+              alt={menu.name}
               style={{
-                width: '100%',
-                height: '52px',
-                background: '#e63312',
-                color: 'white',
-                border: 'none',
-                borderRadius: '14px',
-                fontWeight: '700',
-                fontSize: '16px',
-                cursor: 'pointer',
+                width: '40px',
+                height: '40px',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                background: '#f5f5f5',
+                flexShrink: 0,
               }}
-            >
-              {(unitPrice * quantity).toLocaleString()}원 담기
-            </button>
-          ) : (
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontWeight: '700',
+                  fontSize: '13px',
+                  color: '#222',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {menu.name}
+              </div>
+              <div
+                style={{
+                  fontSize: '12px',
+                  color: '#e63312',
+                  fontWeight: '600',
+                  marginTop: '2px',
+                }}
+              >
+                {menu.price.toLocaleString()}원
+              </div>
+            </div>
             <button
               onClick={onClose}
               style={{
-                width: '100%',
-                height: '52px',
-                background: '#f0f0f0',
-                color: '#555',
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
                 border: 'none',
-                borderRadius: '14px',
-                fontWeight: '700',
-                fontSize: '15px',
+                background: '#f0f0f0',
+                color: '#888',
+                fontSize: '14px',
                 cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
-              취소
+              ✕
             </button>
-          )}
+          </div>
+
+          {/* 콘텐츠 영역 */}
+          <div
+            style={{
+              flex: 1,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {/* Step 1: 단품 / 세트 */}
+            {step === 'type' && (
+              <>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#222',
+                    padding: '14px 16px 10px',
+                  }}
+                >
+                  어떻게 주문하시겠어요?
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    display: 'grid',
+                    gridTemplateColumns: setInfo ? '1fr 1fr' : '1fr',
+                    gap: '12px',
+                    padding: '0 16px 16px',
+                    alignItems: 'stretch',
+                  }}
+                >
+                  <button
+                    onClick={() => handleTypeSelect(false)}
+                    style={{
+                      border: '1.5px solid #e0e0e0',
+                      borderRadius: '16px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      maxHeight: '180px',
+                    }}
+                  >
+                    <img
+                      src={menu.img_url || undefined}
+                      alt={menu.name}
+                      style={{
+                        width: '52px',
+                        height: '52px',
+                        objectFit: 'contain',
+                        borderRadius: '10px',
+                        background: '#f5f5f5',
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: '15px',
+                        fontWeight: '700',
+                        color: '#222',
+                      }}
+                    >
+                      단품
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        color: '#e63312',
+                        fontWeight: '700',
+                      }}
+                    >
+                      {menu.price.toLocaleString()}원
+                    </div>
+                  </button>
+                  {setInfo && (
+                    <button
+                      onClick={() => handleTypeSelect(true)}
+                      style={{
+                        border: '1.5px solid #e0e0e0',
+                        borderRadius: '16px',
+                        background: 'white',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        maxHeight: '180px',
+                      }}
+                    >
+                      <img
+                        src={setInfo.img_url || menu.img_url || undefined}
+                        alt={setInfo.name}
+                        style={{
+                          width: '52px',
+                          height: '52px',
+                          objectFit: 'contain',
+                          borderRadius: '10px',
+                          background: '#f5f5f5',
+                        }}
+                      />
+                      <div
+                        style={{
+                          fontSize: '15px',
+                          fontWeight: '700',
+                          color: '#222',
+                        }}
+                      >
+                        세트
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#888' }}>
+                        음료+사이드 포함
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '13px',
+                          color: '#e63312',
+                          fontWeight: '700',
+                        }}
+                      >
+                        {setInfo.set_price.toLocaleString()}원
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Step 2: 음료 선택 */}
+            {step === 'drink' && (
+              <>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#222',
+                    padding: '14px 16px 10px',
+                  }}
+                >
+                  음료를 선택해주세요
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gridTemplateRows: 'repeat(2, 1fr)',
+                    gap: '10px',
+                    padding: '0 16px 14px',
+                  }}
+                >
+                  {drinks
+                    .slice(
+                      drinkPage * OPTIONS_PER_PAGE,
+                      (drinkPage + 1) * OPTIONS_PER_PAGE
+                    )
+                    .map((d) =>
+                      renderOptionCard(
+                        d,
+                        selectedDrink?.option_id === d.option_id,
+                        () => handleDrinkSelect(d),
+                        '🥤'
+                      )
+                    )}
+                </div>
+              </>
+            )}
+
+            {/* Step 3: 사이드 선택 */}
+            {step === 'side' && (
+              <>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#222',
+                    padding: '14px 16px 10px',
+                  }}
+                >
+                  사이드를 선택해주세요
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gridTemplateRows: 'repeat(2, 1fr)',
+                    gap: '10px',
+                    padding: '0 16px 14px',
+                  }}
+                >
+                  {sides
+                    .slice(
+                      sidePage * OPTIONS_PER_PAGE,
+                      (sidePage + 1) * OPTIONS_PER_PAGE
+                    )
+                    .map((s) =>
+                      renderOptionCard(
+                        s,
+                        selectedSide?.option_id === s.option_id,
+                        () => handleSideSelect(s),
+                        '🍟'
+                      )
+                    )}
+                </div>
+              </>
+            )}
+
+            {/* Step 4: 최종 확인 */}
+            {step === 'confirm' && (
+              <>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#222',
+                    padding: '14px 16px 10px',
+                  }}
+                >
+                  주문 내역을 확인해주세요
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '0 16px 16px',
+                    gap: '12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      background: '#f9f9f9',
+                      borderRadius: '12px',
+                      padding: '14px',
+                    }}
+                  >
+                    {[
+                      { label: '메뉴', value: menu.name },
+                      { label: '종류', value: isSet ? '세트' : '단품' },
+                      ...(isSet && selectedDrink
+                        ? [{ label: '음료', value: selectedDrink.name }]
+                        : []),
+                      ...(isSet && selectedSide
+                        ? [{ label: '사이드', value: selectedSide.name }]
+                        : []),
+                    ].map(({ label, value }) => (
+                      <div
+                        key={label}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        <span style={{ fontSize: '13px', color: '#555' }}>
+                          {label}
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: '600' }}>
+                          {value}
+                        </span>
+                      </div>
+                    ))}
+                    <div
+                      style={{
+                        borderTop: '1px solid #e0e0e0',
+                        marginTop: '8px',
+                        paddingTop: '8px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span style={{ fontSize: '13px', color: '#555' }}>
+                        금액
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '15px',
+                          fontWeight: '700',
+                          color: '#e63312',
+                        }}
+                      >
+                        {unitPrice.toLocaleString()}원
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '20px',
+                    }}
+                  >
+                    <button
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        border: '1.5px solid #ddd',
+                        background: 'white',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      −
+                    </button>
+                    <span
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        minWidth: '24px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() => setQuantity((q) => q + 1)}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        border: '1.5px solid #ddd',
+                        background: 'white',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* 페이지네이션 — 항상 같은 위치 */}
+          <div
+            style={{
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {step === 'drink' &&
+              drinks.length > OPTIONS_PER_PAGE &&
+              renderPagination(drinkPage, drinks.length, setDrinkPage)}
+            {step === 'side' &&
+              sides.length > OPTIONS_PER_PAGE &&
+              renderPagination(sidePage, sides.length, setSidePage)}
+          </div>
+
+          {/* 하단 버튼 */}
+          <div
+            style={{
+              padding: '4px 14px 14px',
+              flexShrink: 0,
+              display: 'flex',
+              gap: '8px',
+            }}
+          >
+            {step === 'confirm' ? (
+              <>
+                <button
+                  onClick={handlePrev}
+                  style={{
+                    flex: 1,
+                    height: '44px',
+                    background: 'white',
+                    color: '#555',
+                    border: '1.5px solid #ddd',
+                    borderRadius: '12px',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  이전
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  style={{
+                    flex: 2,
+                    height: '44px',
+                    background: '#e63312',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontWeight: '700',
+                    fontSize: '15px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {(unitPrice * quantity).toLocaleString()}원 담기
+                </button>
+              </>
+            ) : step === 'type' ? (
+              <button
+                onClick={onClose}
+                style={{
+                  flex: 1,
+                  height: '44px',
+                  background: '#f0f0f0',
+                  color: '#555',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: '700',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                닫기
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handlePrev}
+                  style={{
+                    flex: 1,
+                    height: '44px',
+                    background: 'white',
+                    color: '#555',
+                    border: '1.5px solid #ddd',
+                    borderRadius: '12px',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  이전
+                </button>
+                <button
+                  onClick={onClose}
+                  style={{
+                    flex: 1,
+                    height: '44px',
+                    background: '#f0f0f0',
+                    color: '#555',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  닫기
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

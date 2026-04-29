@@ -470,6 +470,7 @@ function Home() {
       {selectedMenu && (
         <OptionModal
           menu={selectedMenu}
+          voiceMessage={voiceMessage}
           onClose={() => setSelectedMenu(null)}
           onConfirm={(params) => {
             addItem(params.menu_id, params.unit_price);
