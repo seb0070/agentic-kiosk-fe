@@ -4,13 +4,20 @@ import type { MenuItem } from '../types';
 import { getMenus } from '../api/menu';
 
 const PAGE_SIZE = 9;
-
 const CATEGORIES = ['추천메뉴', '버거', '디저트/치킨', '음료/커피', '행사메뉴'];
+
+const parseBadge = (badge: string): string[] => {
+  try {
+    return JSON.parse(badge);
+  } catch {
+    return [];
+  }
+};
 
 const filterByCategory = (menus: MenuItem[], category: string): MenuItem[] => {
   switch (category) {
     case '추천메뉴':
-      return menus.filter((m) => m.badge === 'BEST');
+      return menus.filter((m) => parseBadge(m.badge ?? '').includes('추천'));
     case '버거':
       return menus.filter((m) => m.category === '버거');
     case '디저트/치킨':
@@ -20,7 +27,7 @@ const filterByCategory = (menus: MenuItem[], category: string): MenuItem[] => {
     case '음료/커피':
       return menus.filter((m) => m.category === '음료');
     case '행사메뉴':
-      return menus.filter((m) => m.badge === 'NEW');
+      return menus.filter((m) => parseBadge(m.badge ?? '').includes('NEW'));
     default:
       return menus;
   }
@@ -50,7 +57,6 @@ function MenuModal({ onClose }: Props) {
 
   return (
     <>
-      {/* 딤 배경 */}
       <div
         onClick={onClose}
         style={{
@@ -60,8 +66,6 @@ function MenuModal({ onClose }: Props) {
           zIndex: 10,
         }}
       />
-
-      {/* 팝업 */}
       <div
         style={{
           position: 'absolute',
@@ -78,7 +82,6 @@ function MenuModal({ onClose }: Props) {
           overflow: 'hidden',
         }}
       >
-        {/* 헤더 */}
         <div
           style={{
             display: 'flex',
@@ -105,8 +108,6 @@ function MenuModal({ onClose }: Props) {
             ✕
           </button>
         </div>
-
-        {/* 카테고리 탭 */}
         <div
           style={{
             display: 'flex',
@@ -137,8 +138,6 @@ function MenuModal({ onClose }: Props) {
             </button>
           ))}
         </div>
-
-        {/* 메뉴 그리드 */}
         <div
           style={{
             display: 'grid',
@@ -188,19 +187,13 @@ function MenuModal({ onClose }: Props) {
                 {menu.name}
               </div>
               <div
-                style={{
-                  fontSize: '10px',
-                  color: '#e63312',
-                  marginTop: '2px',
-                }}
+                style={{ fontSize: '10px', color: '#e63312', marginTop: '2px' }}
               >
-                {parseInt(menu.price.replace(',', '')).toLocaleString()}원
+                {menu.price.toLocaleString()}원
               </div>
             </div>
           ))}
         </div>
-
-        {/* 페이지 네비게이션 */}
         <div
           style={{
             display: 'flex',
