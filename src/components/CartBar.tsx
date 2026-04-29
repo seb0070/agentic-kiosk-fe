@@ -1,7 +1,7 @@
-import type { CartItemLocal } from '../store/cartStore';
+import type { CartItem } from '../types';
 
 interface Props {
-  items: CartItemLocal[];
+  items: (CartItem & { img_url: string })[];
   total: number;
   onRemove: (id: number) => void;
   isConnected: boolean;
@@ -47,7 +47,7 @@ function CartBar({
       >
         {items.map((item) => (
           <div
-            key={item.id}
+            key={item.cart_id}
             style={{
               position: 'relative',
               flexShrink: 0,
@@ -55,7 +55,7 @@ function CartBar({
             }}
           >
             <button
-              onClick={() => onRemove(item.id)}
+              onClick={() => onRemove(item.cart_id)}
               style={{
                 position: 'absolute',
                 top: -8,

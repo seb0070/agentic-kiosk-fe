@@ -1,10 +1,16 @@
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useCart } from '../store/cartStore';
+import { getMenus } from '../api/menu';
+import type { MenuItem } from '../types';
 
 function Cart() {
   const navigate = useNavigate();
-  const { items, removeItem, total } = useCart();
-  const totalCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const { data: menus } = useQuery<MenuItem[]>({
+    queryKey: ['menus'],
+    queryFn: () => getMenus(),
+  });
+  const { items, removeItem, total, totalCount } = useCart(menus);
 
   return (
     <div
@@ -69,7 +75,7 @@ function Cart() {
         ) : (
           items.map((item) => (
             <div
-              key={item.id}
+              key={item.cart_id}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -107,7 +113,7 @@ function Cart() {
                     fontWeight: '700',
                   }}
                 >
-                  {(item.price * item.quantity).toLocaleString()}원
+                  {(item.unit_price * item.quantity).toLocaleString()}원
                 </div>
                 <div
                   style={{ fontSize: '12px', color: '#aaa', marginTop: '2px' }}
@@ -116,7 +122,7 @@ function Cart() {
                 </div>
               </div>
               <button
-                onClick={() => removeItem(item.id)}
+                onClick={() => removeItem(item.cart_id)}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -134,7 +140,7 @@ function Cart() {
         )}
       </div>
 
-      {/* 하단 총금액 + 결제 */}
+      {/* 하단 합계 + 결제 */}
       <div
         style={{
           background: '#fff',
