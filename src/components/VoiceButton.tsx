@@ -9,7 +9,7 @@ function VoiceButton({ isConnected, isListening, onToggle }: Props) {
     <div
       style={{
         position: 'absolute',
-        bottom: '2%',
+        bottom: '10%',
         left: '50%',
         transform: 'translateX(-50%)',
         display: 'flex',
