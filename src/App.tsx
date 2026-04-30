@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { SessionContext } from './store/sessionStore';
 import Home from './pages/Home';
 import Cart from './pages/Cart';
+import PaymentComplete from './pages/PaymentComplete';
 
 function App() {
   const [sessionId] = useState(() => crypto.randomUUID());
@@ -13,6 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/payment-complete" element={<PaymentComplete />} />
         </Routes>
       </BrowserRouter>
     </SessionContext.Provider>
