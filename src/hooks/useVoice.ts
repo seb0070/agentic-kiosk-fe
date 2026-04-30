@@ -28,12 +28,23 @@ const playMp3 = async (buffer: ArrayBuffer) => {
   }
 };
 
-export const useVoice = (sessionId: string) => {
+interface UseVoiceOptions {
+  onCartChange?: () => void; // AI가 장바구니 변경 시 refetch 트리거
+  onTimeout?: () => void;    // 3분 비활성 TIMEOUT 시 홈 이동 등
+}
+
+export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const isListeningRef = useRef(false);
+
+  // 최신 콜백을 ref로 유지 (useEffect 클로저 문제 방지)
+  const onCartChangeRef = useRef(options?.onCartChange);
+  const onTimeoutRef = useRef(options?.onTimeout);
+  useEffect(() => { onCartChangeRef.current = options?.onCartChange; }, [options?.onCartChange]);
+  useEffect(() => { onTimeoutRef.current = options?.onTimeout; }, [options?.onTimeout]);
 
   const [isConnected, setIsConnected] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -61,14 +72,32 @@ export const useVoice = (sessionId: string) => {
     const unsubscribe = wsManager.subscribe({
       onConnected: (v: boolean) => setIsConnected(v),
       onMessage: (data: WsMessage) => {
+        // TIMEOUT: 백엔드가 3분 비활성으로 장바구니+히스토리 초기화 알림
+        if (data.screen === 'TIMEOUT') {
+          setVoiceMessage(data.voice);
+          setScreenItems([]);
+          stopListeningInternal();
+          onCartChangeRef.current?.(); // 장바구니 UI 갱신
+          onTimeoutRef.current?.();    // 홈 이동 등
+          return;
+        }
+
         setVoiceMessage(data.voice);
+
         if (data.screen) {
           const lines = data.screen.split('\n').map((l) => l.trim()).filter(Boolean);
           setScreenItems(lines);
         } else {
           setScreenItems([]);
         }
+
         stopListeningInternal();
+
+        // AI 응답이 올 때마다 장바구니 refetch
+        // (add_to_cart, remove_from_cart, upgrade_to_set 툴 반영)
+        if (data.voice) {
+          onCartChangeRef.current?.();
+        }
       },
       onAudio: (buffer: ArrayBuffer) => playMp3(buffer),
     });
@@ -82,14 +111,12 @@ export const useVoice = (sessionId: string) => {
 
     setScreenItems([]);
 
-    // 사용자 클릭 시점에 TTS AudioContext 미리 resume (자동재생 정책 대응)
     await getTtsAudioCtx();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // 브라우저 기본 샘플레이트로 먼저 열기 (강제 16000은 무시되는 브라우저 있음)
       const audioCtx = new AudioContext();
       audioCtxRef.current = audioCtx;
       console.log('실제 AudioContext sampleRate:', audioCtx.sampleRate);
@@ -102,18 +129,14 @@ export const useVoice = (sessionId: string) => {
 
       processor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
-
-        // 브라우저 샘플레이트 → 16000Hz 다운샘플링
         const inputSampleRate = audioCtx.sampleRate;
         const outputSampleRate = 16000;
         const resampleRatio = inputSampleRate / outputSampleRate;
         const outputLength = Math.floor(inputData.length / resampleRatio);
         const resampled = new Float32Array(outputLength);
-
         for (let i = 0; i < outputLength; i++) {
           resampled[i] = inputData[Math.floor(i * resampleRatio)];
         }
-
         wsManager.send(resampled.buffer);
       };
 
