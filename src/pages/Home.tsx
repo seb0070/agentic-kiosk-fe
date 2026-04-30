@@ -145,6 +145,7 @@ function Home() {
         }}
       >
         <button
+          onClick={() => navigate('/')}
           style={{
             background: 'none',
             border: '1.5px solid #ddd',
