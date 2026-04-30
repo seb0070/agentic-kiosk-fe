@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMenus } from '../api/menu';
@@ -54,6 +54,8 @@ function Home() {
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [page, setPage] = useState(0);
   const [selectedMenu, setSelectedMenu] = useState<MenuItem | null>(null);
+  const [toastMsg, setToastMsg] = useState('');
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
 
   const { sessionId } = useSession();
@@ -71,6 +73,7 @@ function Home() {
     voiceMessage,
     screenItems,
     toggleListening,
+    stopListening,
   } = useVoice(sessionId, {
     onCartChange: refetch,
     onTimeout: refetch,
@@ -82,6 +85,17 @@ function Home() {
     page * ITEMS_PER_PAGE,
     (page + 1) * ITEMS_PER_PAGE
   );
+
+  const showToast = (msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastMsg(msg);
+    toastTimerRef.current = setTimeout(() => setToastMsg(''), 2000);
+  };
+
+  const handleMenuClick = (menu: MenuItem) => {
+    stopListening();
+    setSelectedMenu(menu);
+  };
 
   const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
@@ -205,7 +219,7 @@ function Home() {
           {paged.map((menu) => (
             <div
               key={menu.id}
-              onClick={() => setSelectedMenu(menu)}
+              onClick={() => handleMenuClick(menu)}
               style={{
                 background: 'white',
                 borderRadius: '12px',
@@ -443,6 +457,29 @@ function Home() {
       </div>
 
       {/* 옵션 모달 */}
+      {/* 토스트 메시지 */}
+      {toastMsg && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '90px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.75)',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '20px',
+            fontSize: '14px',
+            fontWeight: '600',
+            whiteSpace: 'nowrap',
+            zIndex: 200,
+            pointerEvents: 'none',
+          }}
+        >
+          {toastMsg}
+        </div>
+      )}
+
       {selectedMenu && (
         <OptionModal
           menu={selectedMenu}
@@ -459,6 +496,7 @@ function Home() {
               params.drink_option,
               params.side_option
             );
+            showToast('장바구니에 담겼어요! 🍔');
           }}
         />
       )}

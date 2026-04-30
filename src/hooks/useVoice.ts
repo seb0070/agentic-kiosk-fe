@@ -159,5 +159,5 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
     }
   };
 
-  return { isConnected, isListening, voiceMessage, screenItems, toggleListening };
+  return { isConnected, isListening, voiceMessage, screenItems, toggleListening, stopListening: stopListeningInternal };
 };
