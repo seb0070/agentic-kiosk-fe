@@ -33,10 +33,19 @@ export const useCart = (menus?: MenuItem[]) => {
 
   // 메뉴 클릭 → POST /cart
   const addMutation = useMutation({
-    mutationFn: (params: { menu_id: number; unit_price: number }) =>
+    mutationFn: (params: {
+      menu_id: number;
+      unit_price: number;
+      is_set?: number;
+      drink_option?: string;
+      side_option?: string;
+    }) =>
       addCartItem({
         session_id: sessionId,
         menu_id: params.menu_id,
+        is_set: params.is_set ?? 0,
+        drink_option: params.drink_option ?? '',
+        side_option: params.side_option ?? '',
         quantity: 1,
         unit_price: params.unit_price,
       }),
@@ -53,8 +62,14 @@ export const useCart = (menus?: MenuItem[]) => {
     },
   });
 
-  const addItem = (menu_id: number, unit_price: number) => {
-    addMutation.mutate({ menu_id, unit_price });
+  const addItem = (
+    menu_id: number,
+    unit_price: number,
+    is_set?: number,
+    drink_option?: string,
+    side_option?: string,
+  ) => {
+    addMutation.mutate({ menu_id, unit_price, is_set, drink_option, side_option });
   };
 
   const removeItem = (cartId: number) => {

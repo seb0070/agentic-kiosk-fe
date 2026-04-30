@@ -9,6 +9,9 @@ export const getCart = async (sessionId: string): Promise<CartResponse> => {
 export const addCartItem = async (params: {
   session_id: string;
   menu_id: number;
+  is_set?: number;
+  drink_option?: string;
+  side_option?: string;
   quantity: number;
   unit_price: number;
 }) => {
