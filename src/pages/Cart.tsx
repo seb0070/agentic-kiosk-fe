@@ -146,7 +146,7 @@ function Cart() {
         }}
       >
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/home')}
           style={{
             background: 'none',
             border: '1.5px solid #ddd',
