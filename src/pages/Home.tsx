@@ -7,7 +7,8 @@ import { useCart } from '../store/cartStore';
 import { useSession } from '../store/sessionStore';
 import VoiceWave from '../components/VoiceWave';
 import OptionModal from '../components/OptionModal';
-import type { MenuItem } from '../types';
+import type { MenuItem, ScreenItem } from '../types';
+import CartResultModal from '../components/CartResultModal';
 
 const CATEGORIES = ['추천메뉴', '버거', '디저트/치킨', '음료/커피', '행사메뉴'];
 const CARD_HEIGHT = 110;
@@ -54,6 +55,10 @@ function Home() {
   const [activeCategory, setActiveCategory] = useState('추천메뉴');
   const [page, setPage] = useState(0);
   const [selectedMenu, setSelectedMenu] = useState<MenuItem | null>(null);
+  const [modalInitialStep, setModalInitialStep] = useState<
+    'type' | 'drink' | 'side' | 'confirm'
+  >('type');
+  const [showCartResult, setShowCartResult] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
@@ -65,7 +70,7 @@ function Home() {
     queryFn: () => getMenus(),
   });
 
-  const { addItem, totalCount, refetch } = useCart(menus);
+  const { items, addItem, totalCount, refetch } = useCart(menus);
 
   const {
     isConnected,
@@ -76,7 +81,40 @@ function Home() {
     stopListening,
   } = useVoice(sessionId, {
     onCartChange: refetch,
-    onTimeout: refetch,
+    onTimeout: () => {
+      refetch();
+      navigate('/');
+    },
+    onAction: (action) => {
+      if (action === 'PAGE:cart') navigate('/cart');
+      else if (action === 'PAGE:start') navigate('/');
+      else if (action === 'PAGE:home') navigate('/home');
+      else if (action.startsWith('TAB:')) {
+        setActiveCategory(action.replace('TAB:', ''));
+        setPage(0);
+      } else if (action === 'NONE') {
+        // 담기 완료 - refetch 후 최민 항목으로 CartResultModal 표시
+        refetch();
+        // TODO: refetch 완료 후 items최민항목 잡아 CartResultModal 표시 - 현재 cartItems state최민항목 사용
+        setShowCartResult(true);
+      } else if (action.startsWith('DRINK_SELECT:')) {
+        const menuId = parseInt(action.replace('DRINK_SELECT:', ''));
+        const menu = menus?.find((m) => m.id === menuId);
+        if (menu) {
+          stopListening();
+          setModalInitialStep('drink');
+          setSelectedMenu(menu);
+        }
+      } else if (action.startsWith('SIDE_SELECT:')) {
+        const menuId = parseInt(action.replace('SIDE_SELECT:', ''));
+        const menu = menus?.find((m) => m.id === menuId);
+        if (menu) {
+          stopListening();
+          setModalInitialStep('side');
+          setSelectedMenu(menu);
+        }
+      }
+    },
   });
 
   const filtered = menus ? filterByCategory(menus, activeCategory) : [];
@@ -97,6 +135,7 @@ function Home() {
     const setInfo = await getMenuSetInfo(menu.id);
     if (setInfo) {
       // 세트 정보 있으면 모달 티우기
+      setModalInitialStep('type');
       setSelectedMenu(menu);
     } else {
       // 세트 없으면 바로 담기
@@ -370,34 +409,7 @@ function Home() {
           >
             {voiceMessage || '원하시는 메뉴를 말씀해 주세요'}
           </div>
-          {screenItems.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-                width: '100%',
-              }}
-            >
-              {screenItems.map((item: string, idx: number) => (
-                <div
-                  key={idx}
-                  style={{
-                    background: '#fff5f3',
-                    border: '1.5px solid #e63312',
-                    borderRadius: '10px',
-                    padding: '10px 14px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#e63312',
-                    textAlign: 'center',
-                  }}
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-          )}
+
           <VoiceWave isActive={isListening} />
         </div>
         <div style={{ display: 'flex', gap: '8px', padding: '10px 14px 14px' }}>
@@ -439,29 +451,6 @@ function Home() {
               </span>
             )}
           </button>
-          <button
-            onClick={toggleListening}
-            disabled={!isConnected}
-            style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '50%',
-              border: 'none',
-              background: isListening ? '#e63312' : '#f0f0f0',
-              fontSize: '22px',
-              cursor: isConnected ? 'pointer' : 'default',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: isListening
-                ? '0 0 0 6px rgba(230,51,18,0.25)'
-                : '0 2px 6px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            🎤
-          </button>
         </div>
       </div>
 
@@ -489,13 +478,156 @@ function Home() {
         </div>
       )}
 
+      {/* 추천 메뉴 모달 */}
+      {screenItems.length > 0 && selectedMenu === null && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 90,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            gap: '12px',
+          }}
+        >
+          {/* AI 말풍선 */}
+          {voiceMessage && (
+            <div
+              style={{
+                background: 'white',
+                borderRadius: '14px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#333',
+                textAlign: 'center',
+                width: '100%',
+                maxWidth: '360px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+                border: '1.5px solid #e63312',
+              }}
+            >
+              💬 {voiceMessage}
+            </div>
+          )}
+          {/* 추천 버튼 3개 */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              width: '100%',
+              maxWidth: '360px',
+            }}
+          >
+            {screenItems.map((item: ScreenItem, idx: number) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  const menu = menus?.find((m) => m.name === item.name);
+                  if (menu) handleMenuClick(menu);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  background: 'white',
+                  border: '1.5px solid #e63312',
+                  borderRadius: '14px',
+                  padding: '14px 16px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                }}
+              >
+                <img
+                  src={item.img_url}
+                  alt={item.name}
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    objectFit: 'contain',
+                    borderRadius: '10px',
+                    background: '#f5f5f5',
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontSize: '15px',
+                      fontWeight: '700',
+                      color: '#222',
+                    }}
+                  >
+                    {item.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '13px',
+                      color: '#e63312',
+                      fontWeight: '700',
+                      marginTop: '3px',
+                    }}
+                  >
+                    {item.price.toLocaleString()}원
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 플로특 마이크 버튼 */}
+      {/* 플로팅 마이크 버튼 */}
+      <button
+        onClick={toggleListening}
+        disabled={!isConnected}
+        style={{
+          position: 'absolute',
+          bottom: '80px',
+          right: '16px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          border: 'none',
+          background: isListening ? '#e63312' : '#e63312',
+          fontSize: '22px',
+          cursor: isConnected ? 'pointer' : 'default',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 300,
+          boxShadow: isListening
+            ? '0 0 0 8px rgba(230,51,18,0.2), 0 4px 16px rgba(230,51,18,0.5)'
+            : '0 4px 16px rgba(230,51,18,0.4)',
+          transition: 'all 0.2s ease',
+          opacity: isConnected ? 1 : 0.5,
+        }}
+      >
+        🎤
+      </button>
+
+      {/* 담기 완료 모달 */}
+      {showCartResult && (
+        <CartResultModal
+          items={items}
+          onClose={() => setShowCartResult(false)}
+        />
+      )}
+
       {selectedMenu && (
         <OptionModal
+          key={`${selectedMenu.id}-${modalInitialStep}`}
           menu={selectedMenu}
+          initialStep={modalInitialStep}
           voiceMessage={voiceMessage}
-          isListening={isListening}
-          isConnected={isConnected}
-          onToggleListening={toggleListening}
           onClose={() => setSelectedMenu(null)}
           onConfirm={(params) => {
             addItem(
