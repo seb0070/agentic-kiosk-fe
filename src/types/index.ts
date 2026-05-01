@@ -16,6 +16,10 @@ export interface CartItem {
   name: string;
   quantity: number;
   unit_price: number;
+  img_url?: string;
+  is_set?: number;
+  drink_name?: string;    // TODO: BE get_cart query 수정 후 연결
+  side_name?: string;     // TODO: BE get_cart query 수정 후 연결
 }
 
 export interface CartResponse {
@@ -23,11 +27,30 @@ export interface CartResponse {
   total: number;
 }
 
+export interface ScreenItem {
+  name: string;
+  price: number;
+  img_url: string;
+}
+
+export type ActionType =
+  | 'PAGE:cart'
+  | 'PAGE:start'
+  | 'PAGE:home'
+  | 'TIMEOUT'
+  | 'NONE'
+  | `TAB:${string}`
+  | 'TYPE_SELECT'
+  | `DRINK_SELECT:${string}`
+  | `SIDE_SELECT:${string}`
+  | string;
+
 export interface WsMessage {
   stt_text: string;
   refined_text: string;
   voice: string;
-  screen: string;
+  screen: ScreenItem[] | string;
+  action: ActionType;
 }
 
 export interface OrderResponse {
