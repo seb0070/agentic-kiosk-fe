@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { wsManager } from '../lib/wsManager';
-import type { WsMessage } from '../types';
+import type { WsMessage, ScreenItem } from '../types';
 
-// TTS 재생용 AudioContext 싱글톤
 let ttsAudioCtx: AudioContext | null = null;
 
 const getTtsAudioCtx = async (): Promise<AudioContext> => {
@@ -29,8 +28,9 @@ const playMp3 = async (buffer: ArrayBuffer) => {
 };
 
 interface UseVoiceOptions {
-  onCartChange?: () => void; // AI가 장바구니 변경 시 refetch 트리거
-  onTimeout?: () => void;    // 3분 비활성 TIMEOUT 시 홈 이동 등
+  onCartChange?: () => void;
+  onTimeout?: () => void;
+  onAction?: (action: string) => void;
 }
 
 export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
@@ -40,16 +40,17 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
   const streamRef = useRef<MediaStream | null>(null);
   const isListeningRef = useRef(false);
 
-  // 최신 콜백을 ref로 유지 (useEffect 클로저 문제 방지)
   const onCartChangeRef = useRef(options?.onCartChange);
   const onTimeoutRef = useRef(options?.onTimeout);
+  const onActionRef = useRef(options?.onAction);
   useEffect(() => { onCartChangeRef.current = options?.onCartChange; }, [options?.onCartChange]);
   useEffect(() => { onTimeoutRef.current = options?.onTimeout; }, [options?.onTimeout]);
+  useEffect(() => { onActionRef.current = options?.onAction; }, [options?.onAction]);
 
   const [isConnected, setIsConnected] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceMessage, setVoiceMessage] = useState('');
-  const [screenItems, setScreenItems] = useState<string[]>([]);
+  const [screenItems, setScreenItems] = useState<ScreenItem[]>([]);
 
   const stopListeningInternal = () => {
     processorRef.current?.disconnect();
@@ -72,31 +73,41 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
     const unsubscribe = wsManager.subscribe({
       onConnected: (v: boolean) => setIsConnected(v),
       onMessage: (data: WsMessage) => {
-        // TIMEOUT: 백엔드가 3분 비활성으로 장바구니+히스토리 초기화 알림
-        if (data.screen === 'TIMEOUT') {
+        const action = data.action ?? 'NONE';
+
+        console.log('[WS] action:', action, 'screen:', data.screen);
+
+        // TIMEOUT 처리
+        if (action === 'TIMEOUT') {
           setVoiceMessage(data.voice);
           setScreenItems([]);
           stopListeningInternal();
-          onCartChangeRef.current?.(); // 장바구니 UI 갱신
-          onTimeoutRef.current?.();    // 홈 이동 등
+          onCartChangeRef.current?.();
+          onTimeoutRef.current?.();
           return;
         }
 
         setVoiceMessage(data.voice);
+        stopListeningInternal();
 
-        if (data.screen) {
-          const lines = data.screen.split('\n').map((l) => l.trim()).filter(Boolean);
-          setScreenItems(lines);
+        // screen: RECOMMEND일 때만 카드 표시 (DRINK/SIDE_SELECT는 모달로 처리)
+        const isDrinkOrSide =
+          action.startsWith('DRINK_SELECT:') || action.startsWith('SIDE_SELECT:');
+
+        if (Array.isArray(data.screen) && !isDrinkOrSide) {
+          setScreenItems(data.screen);
         } else {
           setScreenItems([]);
         }
 
-        stopListeningInternal();
-
-        // AI 응답이 올 때마다 장바구니 refetch
-        // (add_to_cart, remove_from_cart, upgrade_to_set 툴 반영)
+        // 장바구니 갱신
         if (data.voice) {
           onCartChangeRef.current?.();
+        }
+
+        // action 처리
+        if (action && action !== 'NONE') {
+          onActionRef.current?.(action);
         }
       },
       onAudio: (buffer: ArrayBuffer) => playMp3(buffer),
@@ -110,16 +121,20 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
     if (isListeningRef.current) return;
 
     setScreenItems([]);
-
     await getTtsAudioCtx();
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
 
       const audioCtx = new AudioContext();
       audioCtxRef.current = audioCtx;
-      console.log('실제 AudioContext sampleRate:', audioCtx.sampleRate);
 
       const source = audioCtx.createMediaStreamSource(stream);
       sourceRef.current = source;
@@ -145,7 +160,6 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
 
       isListeningRef.current = true;
       setIsListening(true);
-      console.log('마이크 시작, WS 전송 중...');
     } catch (e) {
       console.error('마이크 오류:', e);
     }
@@ -159,5 +173,12 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
     }
   };
 
-  return { isConnected, isListening, voiceMessage, screenItems, toggleListening, stopListening: stopListeningInternal };
+  return {
+    isConnected,
+    isListening,
+    voiceMessage,
+    screenItems,
+    toggleListening,
+    stopListening: stopListeningInternal,
+  };
 };
