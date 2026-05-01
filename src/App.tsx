@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { SessionContext } from './store/sessionStore';
 import Start from './pages/Start';
 import Home from './pages/Home';
@@ -7,10 +7,14 @@ import Cart from './pages/Cart';
 import PaymentComplete from './pages/PaymentComplete';
 
 function App() {
-  const [sessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+
+  const resetSession = useCallback(() => {
+    setSessionId(crypto.randomUUID());
+  }, []);
 
   return (
-    <SessionContext.Provider value={{ sessionId }}>
+    <SessionContext.Provider value={{ sessionId, resetSession }}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Start />} />

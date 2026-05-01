@@ -1,8 +1,16 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import heroImg from '../assets/hero.png';
+import { useSession } from '../store/sessionStore';
 
 function Start() {
   const navigate = useNavigate();
+  const { resetSession } = useSession();
+
+  // 시작 화면 진입 시 세션 초기화
+  useEffect(() => {
+    resetSession();
+  }, []);
 
   return (
     <div
