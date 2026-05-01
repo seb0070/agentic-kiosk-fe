@@ -627,7 +627,6 @@ function Home() {
           key={`${selectedMenu.id}-${modalInitialStep}`}
           menu={selectedMenu}
           initialStep={modalInitialStep}
-          voiceMessage={voiceMessage}
           onClose={() => setSelectedMenu(null)}
           onConfirm={(params) => {
             addItem(
