@@ -1,10 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMenus, getMenuSetInfo } from '../api/menu';
-import { useVoice } from '../hooks/useVoice';
+import { useVoiceContext } from '../store/voiceStore';
 import { useCart } from '../store/cartStore';
-import { useSession } from '../store/sessionStore';
 import VoiceWave from '../components/VoiceWave';
 import OptionModal from '../components/OptionModal';
 import type { MenuItem, ScreenItem } from '../types';
@@ -63,33 +62,21 @@ function Home() {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
 
-  const { sessionId } = useSession();
-
   const { data: menus, isLoading } = useQuery({
     queryKey: ['menus'],
     queryFn: () => getMenus(),
   });
 
-  const { items, addItem, totalCount, refetch } = useCart(menus);
+  const { items, addItem, totalCount } = useCart(menus);
 
-  const {
-    isConnected,
-    isListening,
-    voiceMessage,
-    screenItems,
-    toggleListening,
-    stopListening,
-  } = useVoice(sessionId, {
-    onCartChange: refetch,
-    onTimeout: () => {
-      refetch();
-      navigate('/');
-    },
-    onAction: (action) => {
-      if (action === 'PAGE:cart') navigate('/cart');
-      else if (action === 'PAGE:start') navigate('/');
-      else if (action === 'PAGE:home') navigate('/home');
-      else if (action.startsWith('TAB:')) {
+  const { isListening, voiceMessage, screenItems, stopListening, clearScreenItems, setExtraActionHandler } =
+    useVoiceContext();
+
+  const homeActionHandlerRef = useRef<(action: string) => void>(() => {});
+
+  useEffect(() => {
+    homeActionHandlerRef.current = (action: string) => {
+      if (action.startsWith('TAB:')) {
         const tab = action.replace('TAB:', '');
         const tabMap: Record<string, string> = {
           디저트: '디저트/치킨',
@@ -100,10 +87,7 @@ function Home() {
         };
         setActiveCategory(tabMap[tab] ?? tab);
         setPage(0);
-      } else if (action === 'NONE') {
-        // 담기 완료 - refetch 후 최민 항목으로 CartResultModal 표시
-        refetch();
-        // TODO: refetch 완료 후 items최민항목 잡아 CartResultModal 표시 - 현재 cartItems state최민항목 사용
+      } else if (action === 'CART_ADD') {
         setShowCartResult(true);
       } else if (action.startsWith('DRINK_SELECT:')) {
         const menuId = parseInt(action.replace('DRINK_SELECT:', ''));
@@ -122,8 +106,13 @@ function Home() {
           setSelectedMenu(menu);
         }
       }
-    },
+    };
   });
+
+  useEffect(() => {
+    setExtraActionHandler((action) => homeActionHandlerRef.current(action));
+    return () => setExtraActionHandler(null);
+  }, [setExtraActionHandler]);
 
   const filtered = menus ? filterByCategory(menus, activeCategory) : [];
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -415,9 +404,8 @@ function Home() {
               lineHeight: '1.6',
             }}
           >
-            {voiceMessage || '원하시는 메뉴를 말씀해 주세요'}
+            {(!selectedMenu && !showCartResult && screenItems.length === 0 ? voiceMessage : '') || '원하시는 메뉴를 말씀해 주세요'}
           </div>
-
           <VoiceWave isActive={isListening} />
         </div>
         <div style={{ display: 'flex', gap: '8px', padding: '10px 14px 14px' }}>
@@ -489,6 +477,7 @@ function Home() {
       {/* 추천 메뉴 모달 */}
       {screenItems.length > 0 && selectedMenu === null && (
         <div
+          onClick={() => clearScreenItems()}
           style={{
             position: 'absolute',
             inset: 0,
@@ -500,127 +489,119 @@ function Home() {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '24px',
-            gap: '12px',
           }}
         >
-          {/* AI 말풍선 */}
-          {voiceMessage && (
-            <div
-              style={{
-                background: 'white',
-                borderRadius: '14px',
-                padding: '12px 16px',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#333',
-                textAlign: 'center',
-                width: '100%',
-                maxWidth: '360px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
-                border: '1.5px solid #e63312',
-              }}
-            >
-              💬 {voiceMessage}
-            </div>
-          )}
-          {/* 추천 버튼 3개 */}
+          <button
+            onClick={(e) => { e.stopPropagation(); clearScreenItems(); }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              fontSize: '18px',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ✕
+          </button>
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '10px',
+              alignItems: 'center',
+              gap: '14px',
               width: '100%',
               maxWidth: '360px',
+              maxHeight: '80vh',
+              overflowY: 'auto' as const,
             }}
           >
-            {screenItems.map((item: ScreenItem, idx: number) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  const menu = menus?.find((m) => m.name === item.name);
-                  if (menu) handleMenuClick(menu);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  background: 'white',
-                  border: '1.5px solid #e63312',
-                  borderRadius: '14px',
-                  padding: '14px 16px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%',
-                }}
-              >
-                <img
-                  src={item.img_url}
-                  alt={item.name}
-                  style={{
-                    width: '52px',
-                    height: '52px',
-                    objectFit: 'contain',
-                    borderRadius: '10px',
-                    background: '#f5f5f5',
-                    flexShrink: 0,
+            <div style={{ fontSize: '15px', fontWeight: '600', color: 'white', textAlign: 'center' }}>
+              원하시는 메뉴를 누르거나 말씀해 주세요.
+            </div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${
+                  screenItems.length === 1 ? 1
+                  : screenItems.length === 2 ? 2
+                  : screenItems.length === 4 ? 2
+                  : 3
+                }, 1fr)`,
+                gap: '10px',
+                width: '100%',
+                ...(screenItems.length === 1 ? { maxWidth: '160px' } : {}),
+              }}
+            >
+              {screenItems.map((item: ScreenItem, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    const menu = menus?.find((m) => m.name === item.name);
+                    if (menu) handleMenuClick(menu);
                   }}
-                />
-                <div style={{ flex: 1 }}>
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    background: 'white',
+                    border: '1.5px solid #e63312',
+                    borderRadius: '14px',
+                    padding: '12px 8px',
+                    cursor: 'pointer',
+                    aspectRatio: '1',
+                    overflow: 'hidden',
+                    boxSizing: 'border-box' as const,
+                  }}
+                >
+                  <img
+                    src={item.img_url}
+                    alt={item.name}
+                    style={{
+                      width: '55%',
+                      aspectRatio: '1',
+                      objectFit: 'contain',
+                      borderRadius: '8px',
+                      background: '#f5f5f5',
+                    }}
+                  />
                   <div
                     style={{
-                      fontSize: '15px',
+                      fontSize: '11px',
                       fontWeight: '700',
                       color: '#222',
+                      textAlign: 'center',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      width: '100%',
+                      padding: '0 4px',
+                      boxSizing: 'border-box' as const,
                     }}
                   >
                     {item.name}
                   </div>
-                  <div
-                    style={{
-                      fontSize: '13px',
-                      color: '#e63312',
-                      fontWeight: '700',
-                      marginTop: '3px',
-                    }}
-                  >
+                  <div style={{ fontSize: '11px', color: '#e63312', fontWeight: '700' }}>
                     {item.price.toLocaleString()}원
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* 플로특 마이크 버튼 */}
-      {/* 플로팅 마이크 버튼 */}
-      <button
-        onClick={toggleListening}
-        disabled={!isConnected}
-        style={{
-          position: 'absolute',
-          bottom: '80px',
-          right: '16px',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          border: 'none',
-          background: isListening ? '#e63312' : '#e63312',
-          fontSize: '22px',
-          cursor: isConnected ? 'pointer' : 'default',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 300,
-          boxShadow: isListening
-            ? '0 0 0 8px rgba(230,51,18,0.2), 0 4px 16px rgba(230,51,18,0.5)'
-            : '0 4px 16px rgba(230,51,18,0.4)',
-          transition: 'all 0.2s ease',
-          opacity: isConnected ? 1 : 0.5,
-        }}
-      >
-        🎤
-      </button>
 
       {/* 담기 완료 모달 */}
       {showCartResult && (
