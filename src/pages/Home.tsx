@@ -69,7 +69,7 @@ function Home() {
 
   const { items, addItem, totalCount } = useCart(menus);
 
-  const { isListening, voiceMessage, screenItems, stopListening, clearScreenItems, setExtraActionHandler } =
+  const { isListening, voiceMessage, screenItems, startListening, stopListening, clearScreenItems, setExtraActionHandler } =
     useVoiceContext();
 
   const homeActionHandlerRef = useRef<(action: string) => void>(() => {});
@@ -88,10 +88,19 @@ function Home() {
         setActiveCategory(tabMap[tab] ?? tab);
         setPage(0);
       } else if (action === 'CART_ADD') {
-        setShowCartResult(true);
+        if (selectedMenu) setModalInitialStep('confirm');
+        startListening();
+      } else if (action.startsWith('TYPE_SELECT:')) {
+        const menuId = parseInt(action.replace('TYPE_SELECT:', ''));
+        const menu = !isNaN(menuId) ? menus?.find((m) => m.id === menuId) ?? null : null;
+        if (menu) {
+          stopListening();
+          setModalInitialStep('type');
+          setSelectedMenu(menu);
+        }
       } else if (action.startsWith('DRINK_SELECT:')) {
         const menuId = parseInt(action.replace('DRINK_SELECT:', ''));
-        const menu = menus?.find((m) => m.id === menuId);
+        const menu = !isNaN(menuId) ? menus?.find((m) => m.id === menuId) ?? null : null;
         if (menu) {
           stopListening();
           setModalInitialStep('drink');
@@ -99,7 +108,7 @@ function Home() {
         }
       } else if (action.startsWith('SIDE_SELECT:')) {
         const menuId = parseInt(action.replace('SIDE_SELECT:', ''));
-        const menu = menus?.find((m) => m.id === menuId);
+        const menu = !isNaN(menuId) ? menus?.find((m) => m.id === menuId) ?? null : null;
         if (menu) {
           stopListening();
           setModalInitialStep('side');
@@ -113,6 +122,14 @@ function Home() {
     setExtraActionHandler((action) => homeActionHandlerRef.current(action));
     return () => setExtraActionHandler(null);
   }, [setExtraActionHandler]);
+
+  const prevTotalCountRef = useRef(-1);
+  useEffect(() => {
+    if (prevTotalCountRef.current !== -1 && totalCount > prevTotalCountRef.current && selectedMenu && modalInitialStep === 'confirm') {
+      setSelectedMenu(null);
+    }
+    prevTotalCountRef.current = totalCount;
+  }, [totalCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = menus ? filterByCategory(menus, activeCategory) : [];
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
@@ -131,13 +148,12 @@ function Home() {
     stopListening();
     const setInfo = await getMenuSetInfo(menu.id);
     if (setInfo) {
-      // 세트 정보 있으면 모달 티우기
       setModalInitialStep('type');
       setSelectedMenu(menu);
     } else {
-      // 세트 없으면 바로 담기
       addItem(menu.id, menu.price, 0, '', '');
       showToast('장바구니에 담겼어요! 🍔');
+      startListening();
     }
   };
 
@@ -542,61 +558,65 @@ function Home() {
                 ...(screenItems.length === 1 ? { maxWidth: '160px' } : {}),
               }}
             >
-              {screenItems.map((item: ScreenItem, idx: number) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    const menu = menus?.find((m) => m.name === item.name);
-                    if (menu) handleMenuClick(menu);
-                  }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    background: 'white',
-                    border: '1.5px solid #e63312',
-                    borderRadius: '14px',
-                    padding: '12px 8px',
-                    cursor: 'pointer',
-                    aspectRatio: '1',
-                    overflow: 'hidden',
-                    boxSizing: 'border-box' as const,
-                  }}
-                >
-                  <img
-                    src={item.img_url}
-                    alt={item.name}
-                    style={{
-                      width: '55%',
-                      aspectRatio: '1',
-                      objectFit: 'contain',
-                      borderRadius: '8px',
-                      background: '#f5f5f5',
+              {screenItems.map((item: ScreenItem, idx: number) => {
+                const resolved = menus?.find((m) => m.name === item.name);
+                const displayImg = item.img_url || resolved?.img_url || '';
+                const displayPrice = item.price || resolved?.price || 0;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      if (resolved) handleMenuClick(resolved);
                     }}
-                  />
-                  <div
                     style={{
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      color: '#222',
-                      textAlign: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      background: 'white',
+                      border: '1.5px solid #e63312',
+                      borderRadius: '14px',
+                      padding: '12px 8px',
+                      cursor: 'pointer',
+                      aspectRatio: '1',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      width: '100%',
-                      padding: '0 4px',
                       boxSizing: 'border-box' as const,
                     }}
                   >
-                    {item.name}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#e63312', fontWeight: '700' }}>
-                    {item.price.toLocaleString()}원
-                  </div>
-                </button>
-              ))}
+                    <img
+                      src={displayImg}
+                      alt={item.name}
+                      style={{
+                        width: '55%',
+                        aspectRatio: '1',
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        background: '#f5f5f5',
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        color: '#222',
+                        textAlign: 'center',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        width: '100%',
+                        padding: '0 4px',
+                        boxSizing: 'border-box' as const,
+                      }}
+                    >
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#e63312', fontWeight: '700' }}>
+                      {displayPrice.toLocaleString()}원
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -616,7 +636,7 @@ function Home() {
           key={`${selectedMenu.id}-${modalInitialStep}`}
           menu={selectedMenu}
           initialStep={modalInitialStep}
-          onClose={() => setSelectedMenu(null)}
+          onClose={() => { setSelectedMenu(null); startListening(); }}
           onConfirm={(params) => {
             addItem(
               params.menu_id,

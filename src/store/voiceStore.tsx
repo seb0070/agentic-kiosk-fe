@@ -9,6 +9,7 @@ interface VoiceContextValue {
   isListening: boolean;
   voiceMessage: string;
   screenItems: ScreenItem[];
+  startListening: () => void;
   stopListening: () => void;
   clearScreenItems: () => void;
   setExtraActionHandler: (handler: ((action: string) => void) | null) => void;
@@ -49,12 +50,14 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (location.pathname !== '/') {
       startListening();
+    } else {
+      stopListening();
     }
   }, [location.pathname]);
 
   return (
     <VoiceContext.Provider
-      value={{ isListening, voiceMessage, screenItems, stopListening, clearScreenItems, setExtraActionHandler }}
+      value={{ isListening, voiceMessage, screenItems, startListening, stopListening, clearScreenItems, setExtraActionHandler }}
     >
       {children}
       <button
