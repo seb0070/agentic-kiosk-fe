@@ -68,7 +68,7 @@ function PaymentComplete() {
           width: '80px',
           height: '80px',
           borderRadius: '50%',
-          background: '#e63312',
+          background: '#c95020',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -125,7 +125,7 @@ function PaymentComplete() {
             style={{
               fontSize: '20px',
               fontWeight: '800',
-              color: '#e63312',
+              color: '#c95020',
               letterSpacing: '1px',
             }}
           >
@@ -159,11 +159,11 @@ function PaymentComplete() {
         style={{
           width: '100%',
           background: '#fff5f3',
-          border: '1.5px solid #e63312',
+          border: '1.5px solid #c95020',
           borderRadius: '12px',
           padding: '12px 16px',
           fontSize: '13px',
-          color: '#e63312',
+          color: '#c95020',
           fontWeight: '600',
           textAlign: 'center',
           marginBottom: '28px',
@@ -178,7 +178,7 @@ function PaymentComplete() {
         style={{
           width: '100%',
           height: '54px',
-          background: '#e63312',
+          background: '#c95020',
           color: 'white',
           border: 'none',
           borderRadius: '14px',

@@ -21,7 +21,7 @@ function VoiceWave({ isActive }: Props) {
           style={{
             width: '3px',
             borderRadius: '2px',
-            background: isActive ? '#e63312' : '#ddd',
+            background: isActive ? '#c95020' : '#ddd',
             height: isActive ? undefined : '4px',
             animation: isActive
               ? `wave ${0.8 + (i % 5) * 0.15}s ease-in-out ${i * 0.05}s infinite alternate`

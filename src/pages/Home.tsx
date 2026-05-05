@@ -190,7 +190,7 @@ function Home() {
           justifyContent: 'center',
           alignItems: 'center',
           height: '100vh',
-          color: '#e63312',
+          color: '#c95020',
         }}
       >
         로딩 중...
@@ -220,7 +220,7 @@ function Home() {
           alignItems: 'center',
           padding: '10px 16px',
           background: '#fff',
-          borderBottom: '1px solid #ebebeb',
+          borderBottom: '1px solid #f0f0f0',
           flexShrink: 0,
         }}
       >
@@ -228,18 +228,24 @@ function Home() {
           onClick={() => navigate('/')}
           style={{
             background: 'none',
-            border: '1.5px solid #ddd',
-            borderRadius: '20px',
-            padding: '6px 14px',
-            fontSize: '12px',
+            border: 'none',
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
             color: '#555',
+            fontSize: '12px',
             fontWeight: '500',
+            padding: '4px 2px',
           }}
         >
-          ← 처음으로
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="#555" strokeWidth="2" strokeLinejoin="round"/>
+            <path d="M9 22V13h6v9" stroke="#555" strokeWidth="2" strokeLinejoin="round"/>
+          </svg>
+          처음으로
         </button>
-        <span style={{ fontWeight: '800', fontSize: '17px', color: '#e63312' }}>
+        <span style={{ fontWeight: '800', fontSize: '17px', color: '#c95020' }}>
           리아버거
         </span>
         <div style={{ width: '72px' }} />
@@ -249,11 +255,11 @@ function Home() {
       <div
         style={{
           display: 'flex',
-          background: '#e4e4e4',
+          background: '#fff',
           padding: '7px 8px 0',
           gap: '3px',
           flexShrink: 0,
-          borderBottom: '2px solid #d0d0d0',
+          borderBottom: '2px solid #ebebeb',
         }}
       >
         {CATEGORIES.map((cat) => {
@@ -265,13 +271,13 @@ function Home() {
               style={{
                 flex: 1,
                 padding: isActive ? '9px 3px' : '7px 3px',
-                borderTop: `1.5px solid ${isActive ? '#d0d0d0' : 'transparent'}`,
-                borderLeft: `1.5px solid ${isActive ? '#d0d0d0' : 'transparent'}`,
-                borderRight: `1.5px solid ${isActive ? '#d0d0d0' : 'transparent'}`,
+                borderTop: `1.5px solid ${isActive ? '#e0e0e0' : 'transparent'}`,
+                borderLeft: `1.5px solid ${isActive ? '#e0e0e0' : 'transparent'}`,
+                borderRight: `1.5px solid ${isActive ? '#e0e0e0' : 'transparent'}`,
                 borderBottom: isActive ? '2px solid #f8f8f8' : 'none',
                 borderRadius: '8px 8px 0 0',
-                background: isActive ? '#f8f8f8' : '#d4d4d4',
-                color: isActive ? '#e63312' : '#666',
+                background: isActive ? '#f8f8f8' : '#eeeeee',
+                color: isActive ? '#c95020' : '#666',
                 fontWeight: isActive ? '700' : '500',
                 fontSize: '12px',
                 cursor: 'pointer',
@@ -357,7 +363,7 @@ function Home() {
               <div
                 style={{
                   fontSize: '13px',
-                  color: '#e63312',
+                  color: '#c95020',
                   marginTop: '3px',
                   fontWeight: '700',
                 }}
@@ -384,7 +390,7 @@ function Home() {
               height: '32px',
               borderRadius: '50%',
               border: 'none',
-              background: page === 0 ? '#eee' : '#e63312',
+              background: page === 0 ? '#eee' : '#c95020',
               color: page === 0 ? '#bbb' : 'white',
               fontSize: '14px',
               cursor: page === 0 ? 'default' : 'pointer',
@@ -406,7 +412,7 @@ function Home() {
               height: '32px',
               borderRadius: '50%',
               border: 'none',
-              background: page >= totalPages - 1 ? '#eee' : '#e63312',
+              background: page >= totalPages - 1 ? '#eee' : '#c95020',
               color: page >= totalPages - 1 ? '#bbb' : 'white',
               fontSize: '14px',
               cursor: page >= totalPages - 1 ? 'default' : 'pointer',
@@ -427,48 +433,30 @@ function Home() {
       <div
         style={{
           background: '#fff',
-          borderTop: '1px solid #ebebeb',
+          borderTop: '1px solid #f0f0f0',
           flexShrink: 0,
         }}
       >
         <div style={{ display: 'flex', gap: '8px', padding: '10px 14px 14px' }}>
           <button
             onClick={() => navigate('/cart')}
+            disabled={totalCount === 0}
             style={{
               flex: 1,
-              background: '#f0f0f0',
-              color: '#333',
+              background: totalCount > 0 ? '#c95020' : '#f0f0f0',
+              color: totalCount > 0 ? 'white' : '#bbb',
               border: 'none',
               borderRadius: '12px',
-              height: '52px',
-              fontWeight: '700',
-              fontSize: '14px',
-              cursor: 'pointer',
+              height: '48px',
+              fontWeight: '600',
+              fontSize: '15px',
+              letterSpacing: '-0.2px',
+              cursor: totalCount > 0 ? 'pointer' : 'default',
               position: 'relative',
+              transition: 'background 0.2s, color 0.2s',
             }}
           >
-            장바구니 보기
-            {totalCount > 0 && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '-6px',
-                  right: '-6px',
-                  background: '#e63312',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: '20px',
-                  height: '20px',
-                  fontSize: '11px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '700',
-                }}
-              >
-                {totalCount}
-              </span>
-            )}
+            {totalCount > 0 ? `장바구니 보기 (${totalCount})` : '장바구니 보기'}
           </button>
         </div>
       </div>
@@ -478,19 +466,22 @@ function Home() {
       {toastMsg && (
         <div
           style={{
-            position: 'absolute',
-            bottom: '90px',
+            position: 'fixed',
+            top: '50%',
             left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.75)',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(30,30,30,0.88)',
             color: 'white',
-            padding: '10px 20px',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '600',
-            whiteSpace: 'nowrap',
-            zIndex: 200,
+            padding: '28px 40px',
+            borderRadius: '18px',
+            fontSize: '17px',
+            fontWeight: '700',
+            textAlign: 'center',
+            zIndex: 250,
             pointerEvents: 'none',
+            minWidth: '200px',
+            backdropFilter: 'blur(4px)',
+            letterSpacing: '-0.3px',
           }}
         >
           {toastMsg}
@@ -504,8 +495,8 @@ function Home() {
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(0,0,0,0.72)',
+            backdropFilter: 'blur(2px)',
             zIndex: 90,
             display: 'flex',
             flexDirection: 'column',
@@ -585,7 +576,7 @@ function Home() {
                       justifyContent: 'center',
                       gap: '6px',
                       background: 'white',
-                      border: '1.5px solid #e63312',
+                      border: '1.5px solid #c95020',
                       borderRadius: '14px',
                       padding: '12px 8px',
                       cursor: 'pointer',
@@ -626,7 +617,7 @@ function Home() {
                     <div
                       style={{
                         fontSize: '11px',
-                        color: '#e63312',
+                        color: '#c95020',
                         fontWeight: '700',
                       }}
                     >

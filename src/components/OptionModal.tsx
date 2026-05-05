@@ -109,7 +109,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
       key={item.option_id}
       onClick={onClick}
       style={{
-        border: selected ? '2px solid #e63312' : '1.5px solid #e0e0e0',
+        border: selected ? '2px solid #c95020' : '1.5px solid #e0e0e0',
         borderRadius: '10px',
         background: selected ? '#fff5f3' : 'white',
         cursor: 'pointer',
@@ -153,7 +153,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
         style={{
           fontSize: '10px',
           fontWeight: '600',
-          color: selected ? '#e63312' : '#222',
+          color: selected ? '#c95020' : '#222',
           textAlign: 'center',
           lineHeight: '1.3',
         }}
@@ -163,7 +163,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
       <div
         style={{
           fontSize: '10px',
-          color: selected ? '#e63312' : '#888',
+          color: selected ? '#c95020' : '#888',
           fontWeight: '600',
         }}
       >
@@ -197,7 +197,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
             height: '32px',
             borderRadius: '50%',
             border: 'none',
-            background: page === 0 ? '#eee' : '#e63312',
+            background: page === 0 ? '#eee' : '#c95020',
             color: page === 0 ? '#bbb' : 'white',
             fontSize: '14px',
             cursor: page === 0 ? 'default' : 'pointer',
@@ -217,7 +217,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
             borderRadius: '50%',
             border: 'none',
             background:
-              (page + 1) * OPTIONS_PER_PAGE >= total ? '#eee' : '#e63312',
+              (page + 1) * OPTIONS_PER_PAGE >= total ? '#eee' : '#c95020',
             color: (page + 1) * OPTIONS_PER_PAGE >= total ? '#bbb' : 'white',
             fontSize: '14px',
             cursor:
@@ -234,7 +234,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.5)',
+        background: 'rgba(0,0,0,0.72)',
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
@@ -304,7 +304,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
               <div
                 style={{
                   fontSize: '12px',
-                  color: '#e63312',
+                  color: '#c95020',
                   fontWeight: '600',
                   marginTop: '2px',
                 }}
@@ -399,7 +399,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
                       <div style={{ fontSize: '15px', fontWeight: '700', color: '#222' }}>
                         단품
                       </div>
-                      <div style={{ fontSize: '13px', color: '#e63312', fontWeight: '700' }}>
+                      <div style={{ fontSize: '13px', color: '#c95020', fontWeight: '700' }}>
                         {menu.price.toLocaleString()}원
                       </div>
                     </button>
@@ -436,7 +436,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
                         <div style={{ fontSize: '11px', color: '#888' }}>
                           음료+사이드 포함
                         </div>
-                        <div style={{ fontSize: '13px', color: '#e63312', fontWeight: '700' }}>
+                        <div style={{ fontSize: '13px', color: '#c95020', fontWeight: '700' }}>
                           {setInfo.set_price.toLocaleString()}원
                         </div>
                       </button>
@@ -594,7 +594,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
                         style={{
                           fontSize: '15px',
                           fontWeight: '700',
-                          color: '#e63312',
+                          color: '#c95020',
                         }}
                       >
                         {unitPrice.toLocaleString()}원
@@ -710,7 +710,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
                   style={{
                     flex: 2,
                     height: '44px',
-                    background: '#e63312',
+                    background: '#c95020',
                     color: 'white',
                     border: 'none',
                     borderRadius: '12px',
