@@ -10,9 +10,9 @@ import type { MenuItem, ScreenItem } from '../types';
 import CartResultModal from '../components/CartResultModal';
 
 const CATEGORIES = ['추천메뉴', '버거', '디저트/치킨', '음료/커피', '행사메뉴'];
-const CARD_HEIGHT = 110;
-const GRID_ROWS = 2;
-const ITEMS_PER_PAGE = 6;
+const CARD_HEIGHT = 130;
+const GRID_ROWS = 3;
+const ITEMS_PER_PAGE = 9;
 const GAP = 8;
 const GRID_PADDING = 10;
 const PAGINATION_HEIGHT = 44;
@@ -245,39 +245,46 @@ function Home() {
         <div style={{ width: '72px' }} />
       </div>
 
-      {/* 카테고리 탭 */}
+      {/* 카테고리 탭 - 파일 인덱스 스타일 */}
       <div
         style={{
           display: 'flex',
-          background: '#fff',
-          borderBottom: '1px solid #ebebeb',
+          background: '#e4e4e4',
+          padding: '7px 8px 0',
+          gap: '3px',
           flexShrink: 0,
+          borderBottom: '2px solid #d0d0d0',
         }}
       >
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => handleCategoryChange(cat)}
-            style={{
-              flex: 1,
-              padding: '12px 2px',
-              border: 'none',
-              borderBottom:
-                activeCategory === cat
-                  ? '2.5px solid #e63312'
-                  : '2.5px solid transparent',
-              background: 'white',
-              color: activeCategory === cat ? '#e63312' : '#999',
-              fontWeight: activeCategory === cat ? '700' : '400',
-              fontSize: '11px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {cat}
-          </button>
-        ))}
+        {CATEGORIES.map((cat) => {
+          const isActive = activeCategory === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => handleCategoryChange(cat)}
+              style={{
+                flex: 1,
+                padding: isActive ? '9px 3px' : '7px 3px',
+                borderTop: `1.5px solid ${isActive ? '#d0d0d0' : 'transparent'}`,
+                borderLeft: `1.5px solid ${isActive ? '#d0d0d0' : 'transparent'}`,
+                borderRight: `1.5px solid ${isActive ? '#d0d0d0' : 'transparent'}`,
+                borderBottom: isActive ? '2px solid #f8f8f8' : 'none',
+                borderRadius: '8px 8px 0 0',
+                background: isActive ? '#f8f8f8' : '#d4d4d4',
+                color: isActive ? '#e63312' : '#666',
+                fontWeight: isActive ? '700' : '500',
+                fontSize: '12px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                marginBottom: isActive ? '-2px' : '0',
+                transition: 'all 0.1s',
+                boxShadow: isActive ? '0 -2px 6px rgba(0,0,0,0.06)' : 'none',
+              }}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </div>
 
       {/* 메뉴 영역 */}
@@ -320,8 +327,8 @@ function Home() {
                 src={menu.img_url || undefined}
                 alt={menu.name}
                 style={{
-                  width: '54px',
-                  height: '54px',
+                  width: '62px',
+                  height: '62px',
                   objectFit: 'contain',
                   background: '#fafafa',
                   borderRadius: '8px',
@@ -330,23 +337,26 @@ function Home() {
               />
               <div
                 style={{
-                  fontSize: '10px',
+                  fontSize: '12px',
                   fontWeight: '600',
-                  marginTop: '6px',
+                  marginTop: '5px',
                   color: '#222',
                   width: '100%',
                   overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
                   padding: '0 4px',
                   boxSizing: 'border-box',
+                  lineHeight: '1.3',
+                  textAlign: 'center',
                 }}
               >
                 {menu.name}
               </div>
               <div
                 style={{
-                  fontSize: '11px',
+                  fontSize: '13px',
                   color: '#e63312',
                   marginTop: '3px',
                   fontWeight: '700',
@@ -410,42 +420,17 @@ function Home() {
         </div>
       </div>
 
-      {/* 하단 음성 영역 */}
+      {/* 음성 영역 - 남은 공간 채움 (텍스트/파형은 fixed로 표시) */}
+      <div style={{ flex: 1, background: '#f8f8f8' }} />
+
+      {/* 하단 버튼 영역 */}
       <div
         style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
           background: '#fff',
           borderTop: '1px solid #ebebeb',
+          flexShrink: 0,
         }}
       >
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '16px',
-            gap: '10px',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '14px',
-              color: '#333',
-              fontWeight: '500',
-              textAlign: 'center',
-              lineHeight: '1.6',
-            }}
-          >
-            {(!selectedMenu && !showCartResult && screenItems.length === 0
-              ? voiceMessage
-              : '') || '원하시는 메뉴를 말씀해 주세요'}
-          </div>
-          <VoiceWave isActive={isListening} />
-        </div>
         <div style={{ display: 'flex', gap: '8px', padding: '10px 14px 14px' }}>
           <button
             onClick={() => navigate('/cart')}
@@ -568,16 +553,6 @@ function Home() {
           >
             <div
               style={{
-                fontSize: '15px',
-                fontWeight: '600',
-                color: 'white',
-                textAlign: 'center',
-              }}
-            >
-              원하시는 메뉴를 누르거나 말씀해 주세요.
-            </div>
-            <div
-              style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${
                   screenItems.length === 1
@@ -588,7 +563,7 @@ function Home() {
                     ? 2
                     : 3
                 }, 1fr)`,
-                gap: '10px',
+                gap: '14px',
                 width: '100%',
                 ...(screenItems.length === 1 ? { maxWidth: '160px' } : {}),
               }}
@@ -614,7 +589,7 @@ function Home() {
                       borderRadius: '14px',
                       padding: '12px 8px',
                       cursor: 'pointer',
-                      aspectRatio: '1',
+                      aspectRatio: '3/4',
                       overflow: 'hidden',
                       boxSizing: 'border-box' as const,
                     }}
@@ -636,9 +611,11 @@ function Home() {
                         fontWeight: '700',
                         color: '#222',
                         textAlign: 'center',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
+                        lineHeight: '1.3',
                         width: '100%',
                         padding: '0 4px',
                         boxSizing: 'border-box' as const,
@@ -693,6 +670,41 @@ function Home() {
           }}
         />
       )}
+
+      {/* 음성 텍스트 - 모달 유무에 따라 색상 전환 */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '165px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'calc(100vw - 32px)',
+          maxWidth: 'calc(100vh * 0.5625 - 32px)',
+          zIndex: 200,
+          pointerEvents: 'none',
+          textAlign: 'center',
+          fontSize: '17px',
+          fontWeight: '700',
+          color: (!!selectedMenu || showCartResult || screenItems.length > 0) ? 'white' : '#333',
+          lineHeight: '1.5',
+        }}
+      >
+        {voiceMessage || '원하시는 메뉴를 말씀해 주세요'}
+      </div>
+
+      {/* 파형 */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '89px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 200,
+          pointerEvents: 'none',
+        }}
+      >
+        <VoiceWave isActive={isListening} />
+      </div>
     </div>
   );
 }
