@@ -57,6 +57,7 @@ function Home() {
   const [modalInitialStep, setModalInitialStep] = useState<
     'type' | 'drink' | 'side' | 'confirm'
   >('type');
+  const [modalIsSet, setModalIsSet] = useState(false);
   const [showCartResult, setShowCartResult] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,8 +70,14 @@ function Home() {
 
   const { items, addItem, totalCount } = useCart(menus);
 
-  const { isListening, voiceMessage, screenItems, startListening, stopListening, clearScreenItems, setExtraActionHandler } =
-    useVoiceContext();
+  const {
+    isListening,
+    voiceMessage,
+    screenItems,
+    startListening,
+    clearScreenItems,
+    setExtraActionHandler,
+  } = useVoiceContext();
 
   const homeActionHandlerRef = useRef<(action: string) => void>(() => {});
 
@@ -88,29 +95,38 @@ function Home() {
         setActiveCategory(tabMap[tab] ?? tab);
         setPage(0);
       } else if (action === 'CART_ADD') {
-        if (selectedMenu) setModalInitialStep('confirm');
+        if (selectedMenu) {
+          setModalIsSet(modalInitialStep === 'drink' || modalInitialStep === 'side');
+          setModalInitialStep('confirm');
+        }
         startListening();
       } else if (action.startsWith('TYPE_SELECT:')) {
         const menuId = parseInt(action.replace('TYPE_SELECT:', ''));
-        const menu = !isNaN(menuId) ? menus?.find((m) => m.id === menuId) ?? null : null;
+        const menu = !isNaN(menuId)
+          ? menus?.find((m) => m.id === menuId) ?? null
+          : null;
         if (menu) {
-          stopListening();
+          setModalIsSet(false);
           setModalInitialStep('type');
           setSelectedMenu(menu);
         }
       } else if (action.startsWith('DRINK_SELECT:')) {
         const menuId = parseInt(action.replace('DRINK_SELECT:', ''));
-        const menu = !isNaN(menuId) ? menus?.find((m) => m.id === menuId) ?? null : null;
+        const menu = !isNaN(menuId)
+          ? menus?.find((m) => m.id === menuId) ?? null
+          : null;
         if (menu) {
-          stopListening();
+          setModalIsSet(true);
           setModalInitialStep('drink');
           setSelectedMenu(menu);
         }
       } else if (action.startsWith('SIDE_SELECT:')) {
         const menuId = parseInt(action.replace('SIDE_SELECT:', ''));
-        const menu = !isNaN(menuId) ? menus?.find((m) => m.id === menuId) ?? null : null;
+        const menu = !isNaN(menuId)
+          ? menus?.find((m) => m.id === menuId) ?? null
+          : null;
         if (menu) {
-          stopListening();
+          setModalIsSet(true);
           setModalInitialStep('side');
           setSelectedMenu(menu);
         }
@@ -125,7 +141,12 @@ function Home() {
 
   const prevTotalCountRef = useRef(-1);
   useEffect(() => {
-    if (prevTotalCountRef.current !== -1 && totalCount > prevTotalCountRef.current && selectedMenu && modalInitialStep === 'confirm') {
+    if (
+      prevTotalCountRef.current !== -1 &&
+      totalCount > prevTotalCountRef.current &&
+      selectedMenu &&
+      modalInitialStep === 'confirm'
+    ) {
       setSelectedMenu(null);
     }
     prevTotalCountRef.current = totalCount;
@@ -145,7 +166,6 @@ function Home() {
   };
 
   const handleMenuClick = async (menu: MenuItem) => {
-    stopListening();
     const setInfo = await getMenuSetInfo(menu.id);
     if (setInfo) {
       setModalInitialStep('type');
@@ -420,7 +440,9 @@ function Home() {
               lineHeight: '1.6',
             }}
           >
-            {(!selectedMenu && !showCartResult && screenItems.length === 0 ? voiceMessage : '') || '원하시는 메뉴를 말씀해 주세요'}
+            {(!selectedMenu && !showCartResult && screenItems.length === 0
+              ? voiceMessage
+              : '') || '원하시는 메뉴를 말씀해 주세요'}
           </div>
           <VoiceWave isActive={isListening} />
         </div>
@@ -508,7 +530,10 @@ function Home() {
           }}
         >
           <button
-            onClick={(e) => { e.stopPropagation(); clearScreenItems(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              clearScreenItems();
+            }}
             style={{
               position: 'absolute',
               top: '20px',
@@ -541,17 +566,27 @@ function Home() {
               overflowY: 'auto' as const,
             }}
           >
-            <div style={{ fontSize: '15px', fontWeight: '600', color: 'white', textAlign: 'center' }}>
+            <div
+              style={{
+                fontSize: '15px',
+                fontWeight: '600',
+                color: 'white',
+                textAlign: 'center',
+              }}
+            >
               원하시는 메뉴를 누르거나 말씀해 주세요.
             </div>
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${
-                  screenItems.length === 1 ? 1
-                  : screenItems.length === 2 ? 2
-                  : screenItems.length === 4 ? 2
-                  : 3
+                  screenItems.length === 1
+                    ? 1
+                    : screenItems.length === 2
+                    ? 2
+                    : screenItems.length === 4
+                    ? 2
+                    : 3
                 }, 1fr)`,
                 gap: '10px',
                 width: '100%',
@@ -611,7 +646,13 @@ function Home() {
                     >
                       {item.name}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#e63312', fontWeight: '700' }}>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#e63312',
+                        fontWeight: '700',
+                      }}
+                    >
                       {displayPrice.toLocaleString()}원
                     </div>
                   </button>
@@ -621,7 +662,6 @@ function Home() {
           </div>
         </div>
       )}
-
 
       {/* 담기 완료 모달 */}
       {showCartResult && (
@@ -636,7 +676,11 @@ function Home() {
           key={`${selectedMenu.id}-${modalInitialStep}`}
           menu={selectedMenu}
           initialStep={modalInitialStep}
-          onClose={() => { setSelectedMenu(null); startListening(); }}
+          initialIsSet={modalIsSet}
+          onClose={() => {
+            setSelectedMenu(null);
+            startListening();
+          }}
           onConfirm={(params) => {
             addItem(
               params.menu_id,

@@ -24,7 +24,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const extraHandlerRef = useRef<((action: string) => void) | null>(null);
 
   const location = useLocation();
-  const { isListening, voiceMessage, screenItems, startListening, toggleListening, stopListening, clearScreenItems } =
+  const { isListening, voiceMessage, screenItems, startListening, stopListening, clearScreenItems } =
     useVoice(sessionId, {
       onCartChange: () => queryClient.invalidateQueries({ queryKey: ['cart', sessionId] }),
       onTimeout: () => {
@@ -48,7 +48,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    if (location.pathname !== '/') {
+    if (location.pathname !== '/' && location.pathname !== '/payment-complete') {
       startListening();
     } else {
       stopListening();
@@ -60,31 +60,6 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       value={{ isListening, voiceMessage, screenItems, startListening, stopListening, clearScreenItems, setExtraActionHandler }}
     >
       {children}
-      <button
-        onClick={toggleListening}
-        style={{
-          position: 'fixed',
-          bottom: '80px',
-          right: '16px',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          border: 'none',
-          background: '#e63312',
-          fontSize: '22px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          boxShadow: isListening
-            ? '0 0 0 8px rgba(230,51,18,0.2), 0 4px 16px rgba(230,51,18,0.5)'
-            : '0 4px 16px rgba(230,51,18,0.4)',
-          transition: 'all 0.2s ease',
-        }}
-      >
-        🎤
-      </button>
     </VoiceContext.Provider>
   );
 }
