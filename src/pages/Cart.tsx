@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useCart } from '../store/cartStore';
 import { useSession } from '../store/sessionStore';
-import { useVoice } from '../hooks/useVoice';
+import { useVoiceContext } from '../store/voiceStore';
 import { getMenus } from '../api/menu';
 import { createOrder, completePayment } from '../api/order';
 import type { MenuItem } from '../types';
@@ -21,12 +21,8 @@ function Cart() {
     queryFn: () => getMenus(),
   });
 
-  const { items, updateItem, removeItem, total, totalCount, refetch } =
-    useCart(menus);
-
-  const { voiceMessage } = useVoice(sessionId, {
-    onCartChange: refetch,
-  });
+  const { items, updateItem, removeItem, total, totalCount } = useCart(menus);
+  const { voiceMessage } = useVoiceContext();
 
   const isProcessing =
     paymentStep === 'creating_order' || paymentStep === 'processing_payment';
