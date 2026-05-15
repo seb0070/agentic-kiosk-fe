@@ -10,7 +10,7 @@ import type { MenuItem, ScreenItem } from '../types';
 import CartResultModal from '../components/CartResultModal';
 
 const CATEGORIES = ['추천메뉴', '버거', '디저트/치킨', '음료/커피', '행사메뉴'];
-const CARD_HEIGHT = 130;
+const CARD_HEIGHT = 115;
 const GRID_ROWS = 3;
 const ITEMS_PER_PAGE = 9;
 const GAP = 8;
@@ -189,7 +189,7 @@ function Home() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
+          height: '100%',
           color: '#c95020',
         }}
       >
@@ -200,10 +200,8 @@ function Home() {
   return (
     <div
       style={{
-        width: '100vw',
-        height: '100vh',
-        maxWidth: 'calc(100vh * 0.5625)',
-        margin: '0 auto',
+        width: '100%',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         background: '#f8f8f8',
@@ -333,8 +331,8 @@ function Home() {
                 src={menu.img_url || undefined}
                 alt={menu.name}
                 style={{
-                  width: '62px',
-                  height: '62px',
+                  width: '54px',
+                  height: '54px',
                   objectFit: 'contain',
                   background: '#fafafa',
                   borderRadius: '8px',
@@ -666,11 +664,10 @@ function Home() {
       <div
         style={{
           position: 'fixed',
-          bottom: '165px',
+          top: '570px',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 'calc(100vw - 32px)',
-          maxWidth: 'calc(100vh * 0.5625 - 32px)',
+          width: 'calc(100% - 32px)',
           zIndex: 200,
           pointerEvents: 'none',
           textAlign: 'center',

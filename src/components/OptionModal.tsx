@@ -239,7 +239,8 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
+        paddingTop: '140px',
       }}
       onClick={onClose}
     >
@@ -258,7 +259,7 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, onConfirm }: Pr
           style={{
             background: 'white',
             borderRadius: '20px',
-            height: '50vh',
+            height: '420px',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
