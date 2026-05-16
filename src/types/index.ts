@@ -40,12 +40,15 @@ export type ActionType =
   | 'PAGE:welcome'
   | 'PAGE:menu'
   | 'PAGE:complete'
+  | 'PAGE:payment_card'
+  | 'PAGE:payment_mobile'
   | 'TIMEOUT'
   | 'CART_ADD'
   | `TAB:${string}`
   | 'RECOMMEND'
   | `DRINK_SELECT:${string}`
   | `SIDE_SELECT:${string}`
+  | `TYPE_SELECT:${string}`
   | string;
 
 export interface WsMessage {

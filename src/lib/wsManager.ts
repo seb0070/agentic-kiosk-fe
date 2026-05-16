@@ -63,6 +63,12 @@ export const wsManager = {
     }
   },
 
+  sendText(data: object) {
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(data));
+    }
+  },
+
   isOpen() {
     return ws?.readyState === WebSocket.OPEN;
   },

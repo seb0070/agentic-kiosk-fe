@@ -6,6 +6,7 @@ import Start from './pages/Start';
 import Home from './pages/Home';
 import Cart from './pages/Cart';
 import PaymentComplete from './pages/PaymentComplete';
+import PaymentWaiting from './pages/PaymentWaiting';
 
 const DESIGN_WIDTH = 430;
 
@@ -57,6 +58,7 @@ function App() {
               <Route path="/home" element={<Home />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/payment-complete" element={<PaymentComplete />} />
+              <Route path="/payment-waiting" element={<PaymentWaiting />} />
             </Routes>
           </KioskScaler>
         </VoiceProvider>

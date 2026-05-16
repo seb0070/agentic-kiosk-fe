@@ -36,6 +36,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         else if (action === 'PAGE:welcome') navigate('/');
         else if (action === 'PAGE:menu') navigate('/home');
         else if (action === 'PAGE:complete') navigate('/payment-complete');
+        else if (action === 'PAGE:payment_card') navigate('/payment-waiting', { state: { method: 'card' } });
+        else if (action === 'PAGE:payment_mobile') navigate('/payment-waiting', { state: { method: 'mobile' } });
         else extraHandlerRef.current?.(action);
       },
     });
