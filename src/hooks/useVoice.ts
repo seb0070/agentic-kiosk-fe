@@ -7,6 +7,16 @@ let isTtsPlaying = false;
 let ttsEndedAt = 0;
 const ttsQueue: ArrayBuffer[] = [];
 let isTtsProcessing = false;
+let currentTtsSrc: AudioBufferSourceNode | null = null;
+
+const clearTts = () => {
+  ttsQueue.length = 0;
+  if (currentTtsSrc) { try { currentTtsSrc.stop(); } catch { currentTtsSrc = null; } }
+  currentTtsSrc = null;
+  isTtsPlaying = false;
+  isTtsProcessing = false;
+  ttsEndedAt = Date.now();
+};
 
 const getTtsAudioCtx = async (): Promise<AudioContext> => {
   if (!ttsAudioCtx || ttsAudioCtx.state === 'closed') {
@@ -31,11 +41,12 @@ const processTtsQueue = async () => {
       const src = ctx.createBufferSource();
       src.buffer = decoded;
       src.connect(ctx.destination);
+      currentTtsSrc = src;
       await new Promise<void>((resolve) => {
-        // AudioContext가 suspend 상태로 onended가 안 불리는 경우를 대비한 safety timeout
         const safetyTimer = setTimeout(resolve, (decoded.duration + 5) * 1000);
         src.onended = () => {
           clearTimeout(safetyTimer);
+          if (currentTtsSrc === src) currentTtsSrc = null;
           resolve();
         };
         src.start(0);
@@ -81,6 +92,7 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
   const [screenItems, setScreenItems] = useState<ScreenItem[]>([]);
 
   const stopListeningInternal = () => {
+    clearTts();
     processorRef.current?.disconnect();
     sourceRef.current?.disconnect();
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -157,6 +169,7 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
 
   const startListening = async () => {
     if (isListeningRef.current) return;
+    isListeningRef.current = true;
 
     wsManager.connect(sessionId, import.meta.env.VITE_WS_BASE_URL);
     setVoiceMessage('');
@@ -171,6 +184,13 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
           autoGainControl: true,
         },
       });
+
+      // stopListening이 getUserMedia 대기 중에 호출된 경우 스트림 즉시 정리
+      if (!isListeningRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
       streamRef.current = stream;
 
       const audioCtx = new AudioContext();
@@ -191,17 +211,27 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
         const outputLength = Math.floor(inputData.length / resampleRatio);
         const resampled = new Float32Array(outputLength);
         for (let i = 0; i < outputLength; i++) {
-          resampled[i] = inputData[Math.floor(i * resampleRatio)];
+          const pos = i * resampleRatio;
+          const idx = Math.floor(pos);
+          const frac = pos - idx;
+          resampled[i] = idx + 1 < inputData.length
+            ? inputData[idx] * (1 - frac) + inputData[idx + 1] * frac
+            : inputData[idx];
         }
         wsManager.send(resampled.buffer);
       };
 
+      // ScriptProcessorNode는 destination에 연결되어야 onaudioprocess가 실행됨
+      // gain=0 노드를 경유해 스피커 출력 없이 콜백만 활성화
+      const silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0;
       source.connect(processor);
-      processor.connect(audioCtx.destination);
+      processor.connect(silentGain);
+      silentGain.connect(audioCtx.destination);
 
-      isListeningRef.current = true;
       setIsListening(true);
     } catch (e) {
+      isListeningRef.current = false;
       console.error('마이크 오류:', e);
     }
   };
