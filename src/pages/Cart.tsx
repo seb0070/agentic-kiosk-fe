@@ -130,13 +130,13 @@ function Cart() {
                     {item.drink_name && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#888' }}>
                         <span>-{item.drink_name}</span>
-                        <span>{item.drink_extra_price ? `+${item.drink_extra_price.toLocaleString()}원` : '0원'}</span>
+                        <span>{(item.drink_extra_price ?? 0).toLocaleString()}원</span>
                       </div>
                     )}
                     {item.side_name && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#888' }}>
                         <span>-{item.side_name}</span>
-                        <span>{item.side_extra_price ? `+${item.side_extra_price.toLocaleString()}원` : '0원'}</span>
+                        <span>{(item.side_extra_price ?? 0).toLocaleString()}원</span>
                       </div>
                     )}
                   </div>
