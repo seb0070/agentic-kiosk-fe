@@ -7,6 +7,16 @@ let isTtsPlaying = false;
 let ttsEndedAt = 0;
 const ttsQueue: ArrayBuffer[] = [];
 let isTtsProcessing = false;
+let currentTtsSrc: AudioBufferSourceNode | null = null;
+
+const clearTts = () => {
+  ttsQueue.length = 0;
+  if (currentTtsSrc) { try { currentTtsSrc.stop(); } catch { currentTtsSrc = null; } }
+  currentTtsSrc = null;
+  isTtsPlaying = false;
+  isTtsProcessing = false;
+  ttsEndedAt = Date.now();
+};
 
 const getTtsAudioCtx = async (): Promise<AudioContext> => {
   if (!ttsAudioCtx || ttsAudioCtx.state === 'closed') {
@@ -31,11 +41,12 @@ const processTtsQueue = async () => {
       const src = ctx.createBufferSource();
       src.buffer = decoded;
       src.connect(ctx.destination);
+      currentTtsSrc = src;
       await new Promise<void>((resolve) => {
-        // AudioContext가 suspend 상태로 onended가 안 불리는 경우를 대비한 safety timeout
         const safetyTimer = setTimeout(resolve, (decoded.duration + 5) * 1000);
         src.onended = () => {
           clearTimeout(safetyTimer);
+          if (currentTtsSrc === src) currentTtsSrc = null;
           resolve();
         };
         src.start(0);
@@ -58,7 +69,7 @@ const playMp3 = (buffer: ArrayBuffer) => {
 interface UseVoiceOptions {
   onCartChange?: () => void;
   onTimeout?: () => void;
-  onAction?: (action: string) => void;
+  onAction?: (action: string, drinkOption?: string, sideOption?: string) => void;
 }
 
 export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
@@ -81,6 +92,7 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
   const [screenItems, setScreenItems] = useState<ScreenItem[]>([]);
 
   const stopListeningInternal = () => {
+    clearTts();
     processorRef.current?.disconnect();
     sourceRef.current?.disconnect();
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -124,19 +136,7 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
           action.startsWith('TAB:');
 
         let validScreenItems: ScreenItem[] = [];
-        if (Array.isArray(data.screen)) {
-          const asObjects = (data.screen as unknown[]).filter(
-            (item): item is ScreenItem =>
-              typeof item === 'object' && item !== null && 'name' in item && 'price' in item
-          );
-          if (asObjects.length > 0) {
-            validScreenItems = asObjects;
-          } else {
-            validScreenItems = (data.screen as unknown[])
-              .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
-              .map(name => ({ name: name.trim(), price: 0, img_url: '' }));
-          }
-        } else if (typeof data.screen === 'string' && data.screen.trim()) {
+        if (typeof data.screen === 'string' && data.screen.trim()) {
           validScreenItems = data.screen
             .split('\n')
             .map(line => line.replace(/^\d+\.\s*/, '').trim())
@@ -151,14 +151,14 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
           setScreenItems([]);
         }
 
-        // 장바구니 갱신
-        if (data.voice) {
+        // 장바구니 갱신 (AI가 실제로 장바구니를 변경하는 액션일 때만)
+        if (action === 'CART_ADD' || action === 'NONE') {
           onCartChangeRef.current?.();
         }
 
         // action 처리
         if (action) {
-          onActionRef.current?.(action);
+          onActionRef.current?.(action, data.drink_option, data.side_option);
         }
       },
       onAudio: (buffer: ArrayBuffer) => playMp3(buffer),
@@ -169,6 +169,7 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
 
   const startListening = async () => {
     if (isListeningRef.current) return;
+    isListeningRef.current = true;
 
     wsManager.connect(sessionId, import.meta.env.VITE_WS_BASE_URL);
     setVoiceMessage('');
@@ -183,6 +184,13 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
           autoGainControl: true,
         },
       });
+
+      // stopListening이 getUserMedia 대기 중에 호출된 경우 스트림 즉시 정리
+      if (!isListeningRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
       streamRef.current = stream;
 
       const audioCtx = new AudioContext();
@@ -203,17 +211,27 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
         const outputLength = Math.floor(inputData.length / resampleRatio);
         const resampled = new Float32Array(outputLength);
         for (let i = 0; i < outputLength; i++) {
-          resampled[i] = inputData[Math.floor(i * resampleRatio)];
+          const pos = i * resampleRatio;
+          const idx = Math.floor(pos);
+          const frac = pos - idx;
+          resampled[i] = idx + 1 < inputData.length
+            ? inputData[idx] * (1 - frac) + inputData[idx + 1] * frac
+            : inputData[idx];
         }
         wsManager.send(resampled.buffer);
       };
 
+      // ScriptProcessorNode는 destination에 연결되어야 onaudioprocess가 실행됨
+      // gain=0 노드를 경유해 스피커 출력 없이 콜백만 활성화
+      const silentGain = audioCtx.createGain();
+      silentGain.gain.value = 0;
       source.connect(processor);
-      processor.connect(audioCtx.destination);
+      processor.connect(silentGain);
+      silentGain.connect(audioCtx.destination);
 
-      isListeningRef.current = true;
       setIsListening(true);
     } catch (e) {
+      isListeningRef.current = false;
       console.error('마이크 오류:', e);
     }
   };

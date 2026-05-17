@@ -19,8 +19,10 @@ export interface CartItem {
   img_url?: string;
   is_set?: number;
   drink_name?: string;
+  drink_price?: number;
   drink_extra_price?: number;
   side_name?: string;
+  side_price?: number;
   side_extra_price?: number;
 }
 
@@ -55,8 +57,10 @@ export interface WsMessage {
   stt_text: string;
   refined_text: string;
   voice: string;
-  screen: ScreenItem[] | string;
+  screen: string;
   action: ActionType;
+  drink_option?: string;
+  side_option?: string;
 }
 
 export interface OrderResponse {
