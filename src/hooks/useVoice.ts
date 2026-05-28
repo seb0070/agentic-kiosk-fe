@@ -194,6 +194,7 @@ export const useVoice = (sessionId: string, options?: UseVoiceOptions) => {
       streamRef.current = stream;
 
       const audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
       audioCtxRef.current = audioCtx;
 
       const source = audioCtx.createMediaStreamSource(stream);

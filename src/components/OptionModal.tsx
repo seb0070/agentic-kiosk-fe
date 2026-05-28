@@ -275,6 +275,36 @@ function OptionModal({ menu, onClose, initialStep, initialIsSet, preselectedDrin
             boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
           }}
         >
+          {/* 단계 표시기: 세트 주문일 때만 */}
+          {isSet && step !== 'type' && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '10px 0 0',
+                flexShrink: 0,
+              }}
+            >
+              {(['drink', 'side', 'confirm'] as Step[]).map((s, i) => {
+                const steps: Step[] = ['drink', 'side', 'confirm'];
+                const currentIdx = steps.indexOf(step);
+                return (
+                  <div
+                    key={s}
+                    style={{
+                      width: i === currentIdx ? '20px' : '6px',
+                      height: '6px',
+                      borderRadius: '3px',
+                      background: i <= currentIdx ? '#c95020' : '#e0e0e0',
+                      transition: 'all 0.2s',
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
           {/* 헤더 */}
           <div
             style={{

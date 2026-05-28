@@ -15,7 +15,7 @@ function Cart() {
   });
 
   const { items, updateItem, removeItem, total, totalCount } = useCart(menus);
-  const { voiceMessage } = useVoiceContext();
+  useVoiceContext();
 
   const handlePayment = (paymentMethod: 'card' | 'mobile') => {
     if (items.length === 0) return;
@@ -130,13 +130,17 @@ function Cart() {
                     {item.drink_name && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#888' }}>
                         <span>-{item.drink_name}</span>
-                        <span>{(item.drink_extra_price ?? 0).toLocaleString()}원</span>
+                        {(item.drink_extra_price ?? 0) > 0 && (
+                          <span>+{(item.drink_extra_price ?? 0).toLocaleString()}원</span>
+                        )}
                       </div>
                     )}
                     {item.side_name && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#888' }}>
                         <span>-{item.side_name}</span>
-                        <span>{(item.side_extra_price ?? 0).toLocaleString()}원</span>
+                        {(item.side_extra_price ?? 0) > 0 && (
+                          <span>+{(item.side_extra_price ?? 0).toLocaleString()}원</span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -227,23 +231,6 @@ function Cart() {
         )}
       </div>
 
-      {/* 음성 메시지 영역 */}
-      {voiceMessage ? (
-        <div
-          style={{
-            background: '#fff',
-            borderTop: '1px solid #ebebeb',
-            padding: '10px 16px',
-            flexShrink: 0,
-            fontSize: '13px',
-            color: '#555',
-            fontWeight: '500',
-            textAlign: 'center',
-          }}
-        >
-          {voiceMessage}
-        </div>
-      ) : null}
 
       {/* 하단 합계 + 결제 버튼 */}
       <div
@@ -258,17 +245,16 @@ function Cart() {
           style={{
             display: 'flex',
             justifyContent: 'space-between',
+            alignItems: 'center',
             marginBottom: '12px',
-            fontSize: '14px',
-            color: '#555',
           }}
         >
-          <span>
+          <span style={{ fontSize: '13px', color: '#555' }}>
             주문수 <strong style={{ color: '#222' }}>{totalCount}</strong>
           </span>
-          <span>
+          <span style={{ fontSize: '13px', color: '#555' }}>
             총 주문금액{' '}
-            <strong style={{ color: '#c95020' }}>
+            <strong style={{ fontSize: '18px', color: '#c95020' }}>
               {total.toLocaleString()}원
             </strong>
           </span>

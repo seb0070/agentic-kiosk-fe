@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { wsManager } from '../lib/wsManager';
 import { useSession } from '../store/sessionStore';
 import { createOrder, completePayment } from '../api/order';
+import cardPaymentImg from '../assets/card_payment.png';
+import mobilePaymentImg from '../assets/mobile_payment.png';
 
 interface LocationState {
   method: 'card' | 'mobile';
@@ -65,7 +67,7 @@ function PaymentWaiting() {
           width: '96px',
           height: '96px',
           borderRadius: '50%',
-          background: '#3a3a4a',
+          background: '#f0f0f0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -73,18 +75,11 @@ function PaymentWaiting() {
           flexShrink: 0,
         }}
       >
-        {isCard ? (
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
-            <rect x="2" y="5" width="20" height="14" rx="2" stroke="white" strokeWidth="2"/>
-            <path d="M2 10h20" stroke="white" strokeWidth="2"/>
-            <path d="M6 15h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        ) : (
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
-            <rect x="7" y="2" width="10" height="20" rx="2" stroke="white" strokeWidth="2"/>
-            <circle cx="12" cy="17" r="1" fill="white"/>
-          </svg>
-        )}
+        <img
+          src={isCard ? cardPaymentImg : mobilePaymentImg}
+          alt={isCard ? '카드결제' : '모바일결제'}
+          style={{ width: '52px', height: '52px', objectFit: 'contain' }}
+        />
       </div>
 
       <div style={{ fontSize: '22px', fontWeight: '800', color: '#222', marginBottom: '10px' }}>

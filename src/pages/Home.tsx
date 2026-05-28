@@ -320,7 +320,10 @@ function Home() {
             gap: `${GAP}px`,
           }}
         >
-          {paged.map((menu) => (
+          {paged.map((menu) => {
+            const badges = parseBadge(menu.badge ?? '');
+            const badgeLabel = badges.includes('NEW') ? 'NEW' : null;
+            return (
             <div
               key={menu.id}
               onClick={() => handleMenuClick(menu)}
@@ -337,8 +340,25 @@ function Home() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 overflow: 'hidden',
+                position: 'relative',
               }}
             >
+              {badgeLabel && (
+                <div style={{
+                  position: 'absolute',
+                  top: '6px',
+                  left: '6px',
+                  background: '#c95020',
+                  color: 'white',
+                  fontSize: '9px',
+                  fontWeight: '800',
+                  padding: '2px 5px',
+                  borderRadius: '4px',
+                  letterSpacing: '0.3px',
+                }}>
+                  {badgeLabel}
+                </div>
+              )}
               <img
                 src={menu.img_url || undefined}
                 alt={menu.name}
@@ -381,7 +401,8 @@ function Home() {
                 {menu.price.toLocaleString()}원
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
         <div
           style={{

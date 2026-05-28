@@ -78,7 +78,8 @@ function Start() {
               padding: '32px 16px',
               borderRadius: '16px',
               background: '#fff',
-              cursor: 'default',
+              cursor: 'pointer',
+              userSelect: 'none',
             }}
           >
             <img
@@ -88,11 +89,10 @@ function Start() {
                 width: '60px',
                 height: '60px',
                 objectFit: 'contain',
-                opacity: 0.35,
               }}
             />
             <span
-              style={{ fontSize: '17px', fontWeight: '700', color: '#bbb' }}
+              style={{ fontSize: '17px', fontWeight: '700', color: '#000000' }}
             >
               터치 주문
             </span>
