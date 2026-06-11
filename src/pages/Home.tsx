@@ -591,9 +591,11 @@ function Home() {
               }}
             >
               {screenItems.map((item: ScreenItem, idx: number) => {
-                const resolved = menus?.find((m) => m.name === item.name);
-                const displayImg = item.img_url || resolved?.img_url || '';
-                const displayPrice = item.price || resolved?.price || 0;
+                const resolved = [...(menus ?? [])]
+                  .sort((a, b) => b.name.length - a.name.length)
+                  .find((m) => m.name === item.name || item.name.startsWith(m.name));
+                const displayImg = item.img_url || resolved?.img_url || undefined;
+                const displayPrice = resolved?.price || item.price || 0;
                 return (
                   <button
                     key={idx}
