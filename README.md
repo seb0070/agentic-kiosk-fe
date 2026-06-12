@@ -95,16 +95,19 @@ WS /stt/ws?session_id={id}
 
 | action 값           | 동작                           |
 | ------------------- | ------------------------------ |
-| `PAGE:cart`         | 장바구니 페이지로 이동         |
-| `PAGE:welcome`      | 시작 화면으로 이동             |
-| `PAGE:menu`         | 메뉴 화면으로 이동             |
-| `PAGE:complete`     | 결제 완료 화면으로 이동        |
-| `TAB:{카테고리}`    | 해당 카테고리 탭으로 전환      |
-| `CART_ADD`          | 옵션 모달 확인 단계로 이동     |
-| `TYPE_SELECT:{id}`  | 해당 메뉴 세트/단품 모달 열기  |
-| `DRINK_SELECT:{id}` | 해당 메뉴 음료 선택 모달 열기  |
-| `SIDE_SELECT:{id}`  | 해당 메뉴 사이드 선택 모달 열기|
-| `TIMEOUT`           | 세션 초기화 후 시작 화면으로   |
+| `PAGE:cart`           | 장바구니 페이지로 이동          |
+| `PAGE:welcome`        | 시작 화면으로 이동              |
+| `PAGE:menu`           | 메뉴 화면으로 이동              |
+| `PAGE:complete`       | 결제 완료 화면으로 이동         |
+| `PAGE:payment_card`   | 카드 결제 대기 화면으로 이동    |
+| `PAGE:payment_mobile` | 모바일 결제 대기 화면으로 이동  |
+| `TAB:{카테고리}`      | 해당 카테고리 탭으로 전환       |
+| `RECOMMEND`           | 추천 메뉴 카드 화면에 표시      |
+| `CART_ADD`            | 옵션 모달 확인 단계로 이동      |
+| `TYPE_SELECT:{id}`    | 해당 메뉴 세트/단품 모달 열기   |
+| `DRINK_SELECT:{id}`   | 해당 메뉴 음료 선택 모달 열기   |
+| `SIDE_SELECT:{id}`    | 해당 메뉴 사이드 선택 모달 열기 |
+| `TIMEOUT`             | 세션 초기화 후 시작 화면으로    |
 
 ---
 
@@ -133,30 +136,14 @@ src/
 │   └── cartStore.ts         # 장바구니 상태 + React Query 연동
 │
 ├── pages/
-│   ├── Start.tsx            # 시작 화면 (음성 주문 선택)
+│   ├── Start.tsx            # 시작 화면 (터치/음성 주문 선택)
 │   ├── Home.tsx             # 메뉴 목록 화면 (3x3 그리드, 카테고리 탭)
 │   ├── Cart.tsx             # 장바구니 화면 (카드/모바일 결제)
+│   ├── PaymentWaiting.tsx   # 결제 대기 화면 (카드/모바일)
 │   └── PaymentComplete.tsx  # 결제 완료 화면
 │
 └── components/
     ├── VoiceWave.tsx        # 음성 파형 애니메이션
-    ├── OptionModal.tsx      # 메뉴 옵션 모달 (세트/단품 → 음료 → 사이드 → 확인)
-    └── CartResultModal.tsx  # 장바구니 담기 완료 모달
+    └── OptionModal.tsx      # 메뉴 옵션 모달 (세트/단품 → 음료 → 사이드 → 확인)
 ```
 
----
-
-## 개발 현황
-
-- [x] 프로젝트 초기 세팅 및 폴더 구조
-- [x] API 클라이언트 및 타입 연동
-- [x] 시작 화면
-- [x] 메뉴 목록 화면 (3x3 그리드, 카테고리 탭, 페이지네이션)
-- [x] 음성 인식 WebSocket 연결 및 실시간 처리
-- [x] 메뉴 옵션 선택 모달 (세트/단품, 음료, 사이드)
-- [x] 장바구니 상태 관리 및 화면
-- [x] 주문/결제 플로우 (카드결제 / 모바일결제)
-- [x] 결제 완료 화면
-- [x] AI 응답 표시 및 TTS 재생
-- [x] 비활성 타임아웃 수신 및 세션 초기화
-- [ ] 화면 터치 시 타임아웃 갱신 신호 전송
