@@ -1,9 +1,18 @@
-# 🍔 Sadollar Kiosk — 프론트엔드
+# 사용자 의도 파악 및 맥락기반 추천 기능을 갖춘 지능형 음성 결제 에이전트 — 프론트엔드
 
-맥락형 음성인식 키오스크 프론트엔드입니다.
-음성 입력 → STT → AI 에이전트 응답을 실시간으로 처리하며, 메뉴 탐색부터 주문 완료까지의 흐름을 담당합니다.
+기존 키오스크의 복잡한 계층형 UI 없이, 사용자의 자연스러운 음성 발화만으로 메뉴 탐색부터 결제 완료까지의 전체 주문 흐름을 처리하는 키오스크 프론트엔드입니다.
+백엔드 AI 에이전트의 응답(TTS 음성 + 화면 액션)을 실시간 WebSocket으로 수신해 UI에 반영합니다.
 
-> 백엔드 레포: [sadollar-kiosk](https://github.com/culyrh/sadollar-kiosk.git)
+> 백엔드 레포: [agentic-kiosk](https://github.com/culyrh/agentic-kiosk.git)
+
+## 주요 기능
+
+- 음성 인식 기반 자연어 메뉴 주문
+- 실시간 AI 응답 표시 및 TTS 재생
+- 음성 추천 메뉴 카드 표시
+- 세션 기반 장바구니 관리
+- 터치/음성 복합 인터랙션 지원
+- 키오스크 화면 크기 자동 스케일링
 
 ---
 
@@ -30,6 +39,9 @@ cp .env.example .env
 | `VITE_API_BASE_URL` | 백엔드 REST API 주소 | `http://localhost:8000` |
 | `VITE_WS_BASE_URL`  | WebSocket 서버 주소  | `ws://localhost:8000`   |
 
+> **브라우저 마이크 접근(`getUserMedia`)은 HTTPS 또는 localhost 환경에서만 동작합니다.**
+> EC2 등 외부 서버에 배포할 경우 반드시 HTTPS를 적용해야 합니다.
+
 ### 개발 서버 실행
 
 ```bash
@@ -46,6 +58,38 @@ npx serve dist
 ```
 
 `http://localhost:3000` 접속
+
+---
+
+## 화면 흐름
+
+<table>
+  <tr>
+    <td align="center"><b>① 시작</b><br/><img src="docs/welcome.png" width="150"/></td>
+    <td align="center"><b>② 메뉴 목록</b><br/><img src="docs/menu.png" width="150"/></td>
+    <td align="center"><b>③ 음성 추천</b><br/><img src="docs/recommend.png" width="150"/></td>
+    <td align="center"><b>④ 세트/단품 선택</b><br/><img src="docs/type_selection.png" width="150"/></td>
+    <td align="center"><b>⑤ 음료 선택</b><br/><img src="docs/drink_selection.png" width="150"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>⑥ 사이드 선택</b><br/><img src="docs/side_selection.png" width="150"/></td>
+    <td align="center"><b>⑦ 장바구니 담기</b><br/><img src="docs/add_to_cart.png" width="150"/></td>
+    <td align="center"><b>⑧ 장바구니 확인</b><br/><img src="docs/confirm_cart.png" width="150"/></td>
+    <td align="center"><b>⑨ 결제 대기</b><br/><img src="docs/payment_mobile.png" width="150"/></td>
+    <td align="center"><b>⑩ 결제 완료</b><br/><img src="docs/order_complement.png" width="150"/></td>
+  </tr>
+</table>
+
+> 결제 완료 후 15초 뒤 자동으로 시작 화면으로 복귀합니다.
+
+---
+
+## 뷰포트 스케일링
+
+키오스크 화면 크기에 관계없이 일정한 레이아웃을 유지하기 위해 **디자인 기준폭 430px** 기반의 자동 스케일링을 적용합니다.
+
+- `App.tsx`의 `KioskScaler` 컴포넌트가 화면 너비에 맞는 `scale` 값을 계산해 전체 UI에 적용
+- 코드 내 모든 px 수치는 430px 기준으로 작성되어 있으며, 실제 화면에서는 비율에 맞게 확대됩니다
 
 ---
 
@@ -93,8 +137,8 @@ WS /stt/ws?session_id={id}
 
 ### action 값 정의
 
-| action 값           | 동작                           |
-| ------------------- | ------------------------------ |
+| action 값             | 동작                            |
+| --------------------- | ------------------------------- |
 | `PAGE:cart`           | 장바구니 페이지로 이동          |
 | `PAGE:welcome`        | 시작 화면으로 이동              |
 | `PAGE:menu`           | 메뉴 화면으로 이동              |
@@ -146,4 +190,3 @@ src/
     ├── VoiceWave.tsx        # 음성 파형 애니메이션
     └── OptionModal.tsx      # 메뉴 옵션 모달 (세트/단품 → 음료 → 사이드 → 확인)
 ```
-
